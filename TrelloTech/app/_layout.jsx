@@ -4,8 +4,8 @@ import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 import { useAuthStore } from './store/authStore';
 import { useEffect } from 'react';
-
-import { useColorScheme } from '@/hooks/use-color-scheme';
+//import { useColorScheme } from 'react-native';
+import { useColorScheme } from '../hooks/use-color-scheme';
 
 export const unstable_settings = {
   anchor: '(tabs)',
