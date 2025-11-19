@@ -15,9 +15,11 @@ const Stack = createNativeStackNavigator();
 
 export default function AppNavigator() {
   const isAuthenticated = useAuthStore((state) => !!state.isAuthenticated);
-  const isLoading = useAuthStore((state) => !!state.isLoading);
+  const {isLoading} = useAuthStore();
 
   // Afficher un loader pendant l'initialisation
+      console.log("translate:", isLoading)
+          console.log("auth:", isAuthenticated)
   if (isLoading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
