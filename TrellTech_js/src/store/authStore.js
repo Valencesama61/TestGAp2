@@ -1,10 +1,6 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { setupInterceptors } from '../api/trello/interceptors';
-
-// Initialiser les intercepteurs au démarrage
-setupInterceptors();
 
 /**
  * Store d'authentification avec persistence
@@ -12,7 +8,7 @@ setupInterceptors();
 export const useAuthStore = create(
   persist(
     (set, get) => ({
-      // État
+      // État initial
       token: null,
       isAuthenticated: false,
       isLoading: true,
@@ -21,7 +17,12 @@ export const useAuthStore = create(
       // Actions
       setAuth: async (token, user = null) => {
         try {
-          set({ token, isAuthenticated: true, user, isLoading: false });
+          set({ 
+            token, 
+            isAuthenticated: true,  
+            user, 
+            isLoading: false 
+          });
           return true;
         } catch (error) {
           console.error('Error setting auth:', error);
@@ -32,7 +33,12 @@ export const useAuthStore = create(
 
       clearAuth: async () => {
         try {
-          set({ token: null, isAuthenticated: false, user: null, isLoading: false });
+          set({ 
+            token: null, 
+            isAuthenticated: false, 
+            user: null, 
+            isLoading: false 
+          });
           return true;
         } catch (error) {
           console.error('Error clearing auth:', error);
@@ -41,22 +47,27 @@ export const useAuthStore = create(
       },
 
       initializeAuth: () => {
-        set({ isLoading: false });
+        // Vérifier si on a un token en storage
+        const state = get();
+        if (state.token) {
+          set({ isAuthenticated: true, isLoading: false });
+        } else {
+          set({ isAuthenticated: false, isLoading: false });
+        }
       },
     }),
     {
       name: 'trelltech-auth-storage',
-      storage: {
-        getItem: async (name) => {
-          const value = await AsyncStorage.getItem(name);
-          return value ? JSON.parse(value) : null;
-        },
-        setItem: async (name, value) => {
-          await AsyncStorage.setItem(name, JSON.stringify(value));
-        },
-        removeItem: async (name) => {
-          await AsyncStorage.removeItem(name);
-        },
+      storage: createJSONStorage(() => AsyncStorage),
+      partialize: (state) => ({
+        token: state.token,
+        user: state.user,
+      }),
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          state.isAuthenticated = Boolean(state.token);
+          state.isLoading = false;
+        }
       },
     }
   )
@@ -65,5 +76,12 @@ export const useAuthStore = create(
 /**
  * Helpers pour les intercepteurs
  */
-export const getAuthToken = () => useAuthStore.getState().token;
-export const clearAuthToken = () => useAuthStore.getState().clearAuth();
+export const getAuthToken = () => {
+  const state = useAuthStore.getState();
+  return state.token;
+};
+
+export const clearAuthToken = () => {
+  return useAuthStore.getState().clearAuth();
+};
+

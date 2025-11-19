@@ -170,7 +170,7 @@ const handleAPIError = (error) => {
       case 401:
         console.error('Unauthorized - Invalid or expired token');
         clearAuthToken();
-        // Vous pourrez utiliser votre navigation ici
+        // Utiliser la navigation ici
         // import { NavigationService } from '../../navigation/services';
         // NavigationService.navigate('Login');
         break;
