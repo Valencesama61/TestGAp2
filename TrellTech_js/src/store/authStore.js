@@ -81,11 +81,12 @@
 
 // authStore-simple.js
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const useAuthStore = create(
   persist(
-    (set, get) => ({
+    (set) => ({
       token: null,
       isAuthenticated: false,
       isLoading: true,
@@ -94,7 +95,7 @@ export const useAuthStore = create(
       setAuth: (token, user) => {
         set({
           token,
-          isAuthenticated: true,
+          isAuthenticated: !!token,  // Force booléen
           user,
           isLoading: false
         });
@@ -109,10 +110,15 @@ export const useAuthStore = create(
         });
       },
 
-      setLoading: (loading) => set({ isLoading: loading }),
+      setLoading: (loading) => set({ isLoading: !!loading }),  // Force booléen
     }),
     {
       name: 'auth-storage',
+      storage: createJSONStorage(() => AsyncStorage),
+      partialize: (state) => ({
+        token: state.token,
+        user: state.user,
+      }),
     }
   )
 );
