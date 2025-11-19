@@ -2,7 +2,7 @@
  * WORKSPACES (Organizations dans Trello)
  * Les workspaces permettent de regrouper des boards
  */
-export const WORKSPACES_ENDPOINTS = {
+/* export const WORKSPACES_ENDPOINTS = {
 
   getAll: '/members/me/organizations',
   
@@ -17,7 +17,17 @@ export const WORKSPACES_ENDPOINTS = {
   getBoards: (id) => `/organizations/${id}/boards`,
   
   getMembers: (id) => `/organizations/${id}/members`,
+}; */
+
+export const trelloEndpoints = {
+  workspaces: {
+    getMine: "/members/me/organizations",
+    create: "/organizations",
+    update: (id) => `/organizations/${id}`,
+    delete: (id) => `/organizations/${id}`,
+  },
 };
+
 
 /**
  * BOARDS
