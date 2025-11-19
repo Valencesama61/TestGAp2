@@ -20,9 +20,16 @@ export default function App() {
   const initializeAuth = useAuthStore(state => state.initializeAuth);
 
   useEffect(() => {
-    setupInterceptors();
-    
-    initializeAuth();
+    const initialize = async () => {
+      setupInterceptors();
+
+      // Petit délai pour laisser le store se réhydrater
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      initializeAuth();
+    };
+
+    initialize();
   }, []);
   console.log("n'importe quoi")
   return (

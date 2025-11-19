@@ -11,10 +11,12 @@ import {
 } from 'react-native';
 import { useAuthStore } from '../../../store/authStore';
 import { TRELLO_AUTH_URL } from '../../../api/trello/constants';
+import { clearAuthStorage } from '../../../utils/clearStorage';
 
 export default function LoginScreen({ navigation }) {
   const [token, setToken] = useState('');
   const [loading, setLoading] = useState(false);
+  const [debugClicks, setDebugClicks] = useState(0);
   const { setAuth } = useAuthStore();
 
   const handleLogin = async () => {
@@ -31,6 +33,29 @@ export default function LoginScreen({ navigation }) {
     } catch (error) {
       Alert.alert('Erreur', 'Impossible de se connecter. Vérifiez votre token.');
       setLoading(false);
+    }
+  };
+
+  const handleDebugPress = () => {
+    const newCount = debugClicks + 1;
+    setDebugClicks(newCount);
+
+    if (newCount >= 5) {
+      Alert.alert(
+        'Mode Debug',
+        'Nettoyer le cache d\'authentification ?',
+        [
+          { text: 'Annuler', style: 'cancel' },
+          {
+            text: 'Nettoyer',
+            onPress: async () => {
+              await clearAuthStorage();
+              setDebugClicks(0);
+              Alert.alert('Succès', 'Cache nettoyé. Redémarrez l\'app.');
+            },
+          },
+        ]
+      );
     }
   };
 
@@ -51,7 +76,9 @@ export default function LoginScreen({ navigation }) {
   return (
     <View style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.title}>TrellTech</Text>
+        <TouchableOpacity onPress={handleDebugPress}>
+          <Text style={styles.title}>TrellTech</Text>
+        </TouchableOpacity>
         <Text style={styles.subtitle}>Connectez-vous avec votre token Trello</Text>
 
         <TextInput
