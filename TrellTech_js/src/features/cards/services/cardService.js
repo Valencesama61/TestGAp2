@@ -2,7 +2,7 @@ import trelloClient from '../../../api/trello/client';
 import { CARDS_ENDPOINTS } from '../../../api/trello/endpoints';
 
 /**
- * Récupérer une carte par son ID
+ * RÃ©cupÃ©rer une carte par son ID
  */
 export const getCardById = async (id) => {
   try {
@@ -15,7 +15,7 @@ export const getCardById = async (id) => {
 };
 
 /**
- * Créer une nouvelle carte
+ * CrÃ©er une nouvelle carte
  * @param {Object} cardData - { name, idList, desc?, due?, pos? }
  */
 export const createCard = async (cardData) => {
@@ -29,7 +29,7 @@ export const createCard = async (cardData) => {
 };
 
 /**
- * Mettre à jour une carte
+ * Mettre Ã  jour une carte
  * @param {string} id - ID de la carte
  * @param {Object} updates - { name?, desc?, idList?, pos?, due?, dueComplete? }
  */
@@ -58,7 +58,7 @@ export const deleteCard = async (id) => {
 };
 
 /**
- * Ajouter un membre à une carte
+ * Ajouter un membre Ã  une carte
  * @param {string} id - ID de la carte
  * @param {string} memberId - ID du membre
  */
@@ -92,7 +92,7 @@ export const removeMemberFromCard = async (cardId, memberId) => {
 };
 
 /**
- * Récupérer les membres d'une carte
+ * RÃ©cupÃ©rer les membres d'une carte
  * @param {string} id - ID de la carte
  */
 export const getCardMembers = async (id) => {
@@ -106,7 +106,7 @@ export const getCardMembers = async (id) => {
 };
 
 /**
- * Ajouter un label à une carte
+ * Ajouter un label Ã  une carte
  * @param {string} id - ID de la carte
  * @param {string} labelId - ID du label
  */
@@ -140,7 +140,7 @@ export const removeLabelFromCard = async (cardId, labelId) => {
 };
 
 /**
- * Récupérer les commentaires d'une carte
+ * RÃ©cupÃ©rer les commentaires d'une carte
  * @param {string} id - ID de la carte
  */
 export const getCardComments = async (id) => {
@@ -154,7 +154,7 @@ export const getCardComments = async (id) => {
 };
 
 /**
- * Ajouter un commentaire à une carte
+ * Ajouter un commentaire Ã  une carte
  * @param {string} id - ID de la carte
  * @param {string} text - Texte du commentaire
  */

@@ -24,7 +24,7 @@ export default function App() {
     
     initializeAuth();
   }, []);
-
+  console.log("n'importe quoi")
   return (
     <QueryClientProvider client={queryClient}>
       <NavigationContainer>
