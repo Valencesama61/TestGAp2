@@ -17,11 +17,11 @@ export const useAuthStore = create(
       // Actions
       setAuth: async (token, user = null) => {
         try {
-          set({ 
-            token, 
-            isAuthenticated: true,  
-            user, 
-            isLoading: false 
+          set({
+            token,
+            isAuthenticated: !!token,  // Force boolean
+            user,
+            isLoading: false
           });
           return true;
         } catch (error) {
@@ -33,11 +33,11 @@ export const useAuthStore = create(
 
       clearAuth: async () => {
         try {
-          set({ 
-            token: null, 
-            isAuthenticated: false, 
-            user: null, 
-            isLoading: false 
+          set({
+            token: null,
+            isAuthenticated: false,
+            user: null,
+            isLoading: false
           });
           return true;
         } catch (error) {
@@ -49,11 +49,11 @@ export const useAuthStore = create(
       initializeAuth: () => {
         // Vérifier si on a un token en storage
         const state = get();
-        if (state.token) {
-          set({ isAuthenticated: true, isLoading: false });
-        } else {
-          set({ isAuthenticated: false, isLoading: false });
-        }
+        const hasToken = !!state.token;
+        set({
+          isAuthenticated: hasToken,
+          isLoading: false
+        });
       },
     }),
     {
@@ -63,12 +63,6 @@ export const useAuthStore = create(
         token: state.token,
         user: state.user,
       }),
-      onRehydrateStorage: () => (state) => {
-        if (state) {
-          state.isAuthenticated = Boolean(state.token);
-          state.isLoading = false;
-        }
-      },
     }
   )
 );

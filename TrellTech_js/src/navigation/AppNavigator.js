@@ -14,7 +14,8 @@ import { useAuthStore } from '../store/authStore';
 const Stack = createNativeStackNavigator();
 
 export default function AppNavigator() {
-  const { isAuthenticated, isLoading } = useAuthStore();
+  const isAuthenticated = useAuthStore((state) => !!state.isAuthenticated);
+  const isLoading = useAuthStore((state) => !!state.isLoading);
 
   // Afficher un loader pendant l'initialisation
   if (isLoading) {
