@@ -70,29 +70,46 @@
 // });
 
 
+import React, { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
-import WorkspacesScreen from './src/features/workspaces/screens/WorkspacesListScreen';
+import { NavigationContainer } from '@react-navigation/native';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-export default function App() {
-  return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto"></StatusBar>
-      <WorkspacesScreen></WorkspacesScreen>
-      {/* <WorkspacesScreen /> */}
-    </View>
-  );
-}
+import AppNavigator from './src/navigation/AppNavigator';
+import { useAuthStore } from './src/store/authStore';
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
+// Configuration React Query
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 2,
+      staleTime: 30000, // 30 secondes
+      cacheTime: 5 * 60 * 1000, // 5 minutes
+      refetchOnWindowFocus: false,
+    },
+    mutations: {
+      retry: 1,
+    },
   },
 });
+
+export default function App() {
+  const initializeAuth = useAuthStore((state) => state.initializeAuth);
+
+  useEffect(() => {
+    // Initialiser l'authentification au démarrage
+    initializeAuth();
+  }, [initializeAuth]);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <NavigationContainer>
+        <AppNavigator />
+        <StatusBar style="auto" />
+      </NavigationContainer>
+    </QueryClientProvider>
+  );
+}
 // import React from 'react';
 // import { StatusBar } from 'expo-status-bar';
 // import { StyleSheet } from 'react-native';

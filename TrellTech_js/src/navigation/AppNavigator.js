@@ -1,32 +1,39 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { View, Text } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 
-// Screens
-import TimePage from '../pages/TimePage';
-import BoardListScreen from '../features/boards/screens/BoardListScreen';
-import BoardDetailScreen from '../features/boards/screens/BoardDetailScreen';
-import CardListScreen from '../features/cards/screens/CardListScreen';
-import CardDetailScreen from '../features/cards/screens/CardDetailScreen';
-import ListScreen from '../features/lists/screens/ListScreen';
-import ListDetailScreen from '../features/lists/screens/ListDetailScreen';
-import WorkspacesListScreen from '../features/workspaces/screens/WorkspacesListScreen';
-import WorkspaceDetailScreen from '../features/workspaces/screens/WorkspaceDetailScreen';
+// Auth
+import LoginScreen from '../features/auth/screens/LoginScreen';
+
+// Main App
+import MainTabNavigator from './MainTabNavigator';
+
+// Store
+import { useAuthStore } from '../store/authStore';
 
 const Stack = createNativeStackNavigator();
 
 export default function AppNavigator() {
+  const { isAuthenticated, isLoading } = useAuthStore();
+
+  // Afficher un loader pendant l'initialisation
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#0079BF" />
+      </View>
+    );
+  }
+
   return (
-    <Stack.Navigator initialRouteName="Time">
-      <Stack.Screen name="Time" component={TimePage} options={{ title: 'Heure' }} />
-      <Stack.Screen name="Boards" component={BoardListScreen} />
-      <Stack.Screen name="BoardDetail" component={BoardDetailScreen} />
-      <Stack.Screen name="Cards" component={CardListScreen} />
-      <Stack.Screen name="CardDetail" component={CardDetailScreen} />
-      <Stack.Screen name="Lists" component={ListScreen} />
-      <Stack.Screen name="ListDetail" component={ListDetailScreen} />
-      <Stack.Screen name="Workspaces" component={WorkspacesListScreen} />
-      <Stack.Screen name="WorkspaceDetail" component={WorkspaceDetailScreen} />
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      {!isAuthenticated ? (
+        // Stack d'authentification
+        <Stack.Screen name="Login" component={LoginScreen} />
+      ) : (
+        // Stack principal de l'application
+        <Stack.Screen name="Main" component={MainTabNavigator} />
+      )}
     </Stack.Navigator>
   );
 }
