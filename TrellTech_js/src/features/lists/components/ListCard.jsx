@@ -1,146 +1,88 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import PropTypes from 'prop-types';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, Button, FlatList, Alert, StyleSheet } from 'react-native';
+import { getLists, createList, updateList, archiveList } from '../services/listService';
 
-export default function ListCard({ list, onPress, onEdit, onArchive }) {
+const ListCRUD = ({ boardId }) => {
+  const [lists, setLists] = useState([]);
+  const [newName, setNewName] = useState('');
+
+  const fetchLists = async () => {
+    try {
+      const res = await getLists(boardId);
+      setLists(res.data);
+    } catch (e) {
+      console.log(e);
+    }
+  };
+
+  useEffect(() => { fetchLists(); }, [boardId]);
+
+  const handleCreate = async () => {
+    if (!newName) return;
+    await createList(boardId, newName);
+    setNewName('');
+    fetchLists();
+  };
+
+  const handleUpdate = (id, currentName) => {
+    Alert.prompt(
+      'Modifier le nom',
+      '',
+      async (text) => {
+        if (text) {
+          await updateList(id, text);
+          fetchLists();
+        }
+      },
+      'plain-text',
+      currentName
+    );
+  };
+
+  const handleArchive = async (id) => {
+    Alert.alert(
+      'Archiver la liste ?',
+      '',
+      [
+        { text: 'Annuler' },
+        { text: 'Oui', onPress: async () => { await archiveList(id); fetchLists(); } }
+      ]
+    );
+  };
+
   return (
-    <TouchableOpacity
-      style={styles.card}
-      onPress={() => onPress(list)}
-      activeOpacity={0.7}
-    >
-      <View style={styles.content}>
-        <View style={styles.header}>
-          <Text style={styles.name} numberOfLines={1}>
-            {list.name}
-          </Text>
-          {list.closed && (
-            <View style={styles.archivedBadge}>
-              <Text style={styles.archivedText}>Archiv�e</Text>
+    <View style={styles.container}>
+      <Text style={styles.title}>Listes Trello</Text>
+      <TextInput
+        style={styles.input}
+        value={newName}
+        onChangeText={setNewName}
+        placeholder="Nouvelle liste"
+      />
+      <Button title="Créer" onPress={handleCreate} />
+      <FlatList
+        data={lists}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <View style={styles.listItem}>
+            <Text>{item.name}</Text>
+            <View style={styles.buttons}>
+              <Button title="Éditer" onPress={() => handleUpdate(item.id, item.name)} />
+              <Button title="Archiver" onPress={() => handleArchive(item.id)} />
             </View>
-          )}
-        </View>
-
-        <View style={styles.footer}>
-          <View style={styles.info}>
-            {list.cards && (
-              <View style={styles.infoItem}>
-                <Ionicons name="card-outline" size={14} color="#666" />
-                <Text style={styles.infoText}>{list.cards.length} cartes</Text>
-              </View>
-            )}
           </View>
-
-          <View style={styles.actions}>
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={(e) => {
-                e.stopPropagation();
-                onEdit(list);
-              }}
-            >
-              <Ionicons name="pencil-outline" size={20} color="#0079BF" />
-            </TouchableOpacity>
-
-            {!list.closed && (
-              <TouchableOpacity
-                style={styles.actionButton}
-                onPress={(e) => {
-                  e.stopPropagation();
-                  onArchive(list);
-                }}
-              >
-                <Ionicons name="archive-outline" size={20} color="#EB5A46" />
-              </TouchableOpacity>
-            )}
-          </View>
-        </View>
-      </View>
-    </TouchableOpacity>
+        )}
+      />
+    </View>
   );
-}
-
-ListCard.propTypes = {
-  list: PropTypes.shape({
-    id: PropTypes.string.isRequired,
-    name: PropTypes.string.isRequired,
-    closed: PropTypes.bool,
-    cards: PropTypes.array,
-  }).isRequired,
-  onPress: PropTypes.func.isRequired,
-  onEdit: PropTypes.func,
-  onArchive: PropTypes.func,
-};
-
-ListCard.defaultProps = {
-  onEdit: () => {},
-  onArchive: () => {},
 };
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    marginHorizontal: 16,
-    marginBottom: 12,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  content: {
-    padding: 16,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  name: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    flex: 1,
-    marginRight: 8,
-  },
-  archivedBadge: {
-    backgroundColor: '#EB5A46',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-  },
-  archivedText: {
-    color: '#fff',
-    fontSize: 10,
-    fontWeight: '600',
-  },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  info: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  infoItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  infoText: {
-    fontSize: 12,
-    color: '#666',
-    marginLeft: 4,
-  },
-  actions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  actionButton: {
-    padding: 8,
-    marginLeft: 8,
-  },
+  container: { padding: 20 },
+  title: { fontSize: 20, marginBottom: 10 },
+  input: { borderWidth: 1, marginBottom: 10, padding: 5 },
+  listItem: { flexDirection: 'row', justifyContent: 'space-between', marginVertical: 5 },
+  buttons: { flexDirection: 'row', gap: 5 }
 });
+
+export default ListCRUD;

@@ -1,104 +1,77 @@
 // import { StatusBar } from 'expo-status-bar';
-// import { useEffect } from 'react';
-// import { NavigationContainer } from '@react-navigation/native';
-// import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-// import { useAuthStore } from './src/store/authStore';
-// import AppNavigator from './src/navigation/AppNavigator';
-
-// import { setupInterceptors } from './src/api/trello/interceptors';
-
-// const queryClient = new QueryClient({
-//   defaultOptions: {
-//     queries: {
-//       retry: 2,
-//       staleTime: 30000,
-//     },
-//   },
-// });
+// import { StyleSheet, Text, View } from 'react-native';
 
 // export default function App() {
-//   const initializeAuth = useAuthStore(state => state.initializeAuth);
-
-//   useEffect(() => {
-//     const initialize = async () => {
-//       setupInterceptors();
-
-//       // Petit délai pour laisser le store se réhydrater
-//       await new Promise(resolve => setTimeout(resolve, 100));
-
-//       initializeAuth();
-//     };
-
-//     initialize();
-//   }, []);
-//   console.log("n'importe quoi")
-  
 //   return (
-//     <QueryClientProvider client={queryClient}>
-//       <NavigationContainer>
-//         <AppNavigator />
-//         <StatusBar style="auto" />
-//       </NavigationContainer>
-//     </QueryClientProvider>
+//     <View style={styles.container}>
+//       <Text>Open up App.js to start working on your app!</Text>
+//       <StatusBar style="auto" />
+//     </View>
 //   );
 // }
 
+// const styles = StyleSheet.create({
+//   container: {
+//     flex: 1,
+//     backgroundColor: '#fff',
+//     alignItems: 'center',
+//     justifyContent: 'center',
+//   },
+// });
+
+
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import { StyleSheet, Text, View } from 'react-native';
+import { useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuthStore } from './src/store/authStore';
-import AppNavigator from './src/navigation/AppNavigator';
-import { setupInterceptors } from './src/api/trello/interceptors';
-import { View, ActivityIndicator } from 'react-native';
+import CardsListScreen from './src/features/cards/screens/CardListScreen';
+import ListCard from './src/features/lists/components/ListCard';
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 2,
-      staleTime: 30000,
+      retry: 2,                // Réessayer 2 fois en cas d'erreur
+      staleTime: 30000,        // Les données sont fraîches pendant 30 secondes
+      cacheTime: 5 * 60 * 1000, // Garder en cache 5 minutes
+      refetchOnWindowFocus: false, // Ne pas refetch au focus
+    },
+    mutations: {
+      retry: 1, // Réessayer 1 fois pour les mutations
     },
   },
 });
 
 export default function App() {
-  const [isStoreReady, setIsStoreReady] = useState(false);
-  //const initializeAuth = useAuthStore(state => state.initializeAuth);
+  const initializeAuth = useAuthStore(state => state.initializeAuth);
 
   useEffect(() => {
-    const initialize = async () => {
-      try {
-        setupInterceptors();
-        
-        setTimeout(() => {
-          //initializeAuth();
-          setIsStoreReady(true);
-        }, 500);
-        
-      } catch (error) {
-        console.error('App initialization error:', error);
-        setIsStoreReady(true);
-      }
-    };
-
-    initialize();
+    // Initialiser l'authentification au démarrage
+    initializeAuth();
   }, []);
 
-  // Afficher un splash screen pendant l'initialisation
-  if (!isStoreReady) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color="#0079BF" />
-      </View>
-    );
-  }
-  
   return (
-    <QueryClientProvider client={queryClient}>
-      <NavigationContainer>
-        <AppNavigator />
-        <StatusBar style="auto" />
-      </NavigationContainer>
-    </QueryClientProvider>
+    // <QueryClientProvider client={queryClient}>
+    //   <View style={styles.container}>
+    //     <Text>Open up App.js to start working on your app!</Text>
+    //     <CardsListScreen />
+    //     <StatusBar style="auto" />
+    //   </View>
+    // </QueryClientProvider>
+    <View style={styles.container}>
+      <Text>Open up App.js to start working on your app!</Text>
+      <StatusBar style="auto" />
+      <ListCard /> 
+      
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});

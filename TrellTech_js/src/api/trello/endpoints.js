@@ -17,17 +17,7 @@ export const WORKSPACES_ENDPOINTS = {
   getBoards: (id) => `/organizations/${id}/boards`,
   
   getMembers: (id) => `/organizations/${id}/members`,
-}; 
-
-// export const trelloEndpoints = {
-//   workspaces: {
-//     getMine: "/members/me/organizations",
-//     create: "/organizations",
-//     update: (id) => `/organizations/${id}`,
-//     delete: (id) => `/organizations/${id}`,
-//   },
-// };
-
+};
 
 /**
  * BOARDS

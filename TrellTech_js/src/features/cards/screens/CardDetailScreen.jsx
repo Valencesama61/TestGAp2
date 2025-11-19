@@ -1,38 +1,81 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
-  Text,
   ScrollView,
+  Text,
   StyleSheet,
-  ActivityIndicator,
   TouchableOpacity,
+  TextInput,
+  ActivityIndicator,
   Alert,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useCard } from '../hooks/useCards';
-import { useCardActions } from '../hooks/useCardActions';
+import {
+  useCard,
+  useUpdateCard,
+  useAssignMember,
+  useRemoveMember,
+} from '../hooks/useCards';
 
-export default function CardDetailScreen({ route, navigation }) {
+const CardDetailScreen = ({ route, navigation }) => {
   const { cardId } = route.params;
-  const { data: card, isLoading } = useCard(cardId);
-  const { deleteCard, updateCard } = useCardActions();
 
-  const handleDelete = () => {
+  // State local
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedName, setEditedName] = useState('');
+  const [editedDesc, setEditedDesc] = useState('');
+
+  // Hooks
+  const { data: card, isLoading, error } = useCard(cardId);
+  const updateCardMutation = useUpdateCard();
+  const assignMemberMutation = useAssignMember();
+  const removeMemberMutation = useRemoveMember();
+
+  /**
+   * Activer le mode édition
+   */
+  const handleEditStart = () => {
+    setEditedName(card.name);
+    setEditedDesc(card.desc || '');
+    setIsEditing(true);
+  };
+
+  /**
+   * Sauvegarder les modifications
+   */
+  const handleSave = async () => {
+    try {
+      await updateCardMutation.mutateAsync({
+        cardId: card.id,
+        updates: {
+          name: editedName,
+          desc: editedDesc,
+        },
+      });
+      setIsEditing(false);
+      Alert.alert('Success', 'Updated map');
+    } catch (error) {
+      Alert.alert('Erreur', 'Unable to update the map');
+    }
+  };
+
+  /**
+   * Retirer un membre
+   */
+  const handleRemoveMember = async (memberId) => {
     Alert.alert(
-      'Supprimer la carte',
-      'Êtes-vous sûr ?',
+      'Remove member',
+      'Are you sure you want to remove this member??',
       [
         { text: 'Annuler', style: 'cancel' },
         {
-          text: 'Supprimer',
+          text: 'Remove',
           style: 'destructive',
           onPress: async () => {
             try {
-              await deleteCard(cardId);
-              navigation.goBack();
-              Alert.alert('Succès', 'Carte supprimée');
+              await removeMemberMutation.mutateAsync({ cardId, memberId });
+              Alert.alert('Succès', 'Membre retiré');
             } catch (error) {
-              Alert.alert('Erreur', 'Impossible de supprimer la carte');
+              Alert.alert('Erreur', 'Unable to remove the member');
             }
           },
         },
@@ -48,116 +91,148 @@ export default function CardDetailScreen({ route, navigation }) {
     );
   }
 
+  if (error) {
+    return (
+      <View style={styles.centerContainer}>
+        <Text style={styles.errorText}>Erreur: {error.message}</Text>
+      </View>
+    );
+  }
+
   if (!card) {
     return (
       <View style={styles.centerContainer}>
-        <Ionicons name="alert-circle-outline" size={48} color="#EB5A46" />
-        <Text style={styles.errorText}>Carte non trouvée</Text>
+        <Text>Card not found</Text>
       </View>
     );
   }
 
   return (
     <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <Ionicons name="card" size={24} color="#0079BF" />
-        <Text style={styles.title}>{card.name}</Text>
+      {/* Section Titre */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Title</Text>
+        {isEditing ? (
+          <TextInput
+            style={styles.input}
+            value={editedName}
+            onChangeText={setEditedName}
+            placeholder="Card Name"
+          />
+        ) : (
+          <Text style={styles.cardTitle}>{card.name}</Text>
+        )}
       </View>
 
-      {card.desc && (
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Ionicons name="document-text-outline" size={20} color="#666" />
-            <Text style={styles.sectionTitle}>Description</Text>
-          </View>
-          <Text style={styles.description}>{card.desc}</Text>
-        </View>
-      )}
-
-      {card.due && (
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Ionicons name="calendar-outline" size={20} color="#666" />
-            <Text style={styles.sectionTitle}>Date d'échéance</Text>
-          </View>
-          <Text style={styles.infoText}>
-            {new Date(card.due).toLocaleDateString('fr-FR', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit',
-            })}
+      {/* Section Description */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Description</Text>
+        {isEditing ? (
+          <TextInput
+            style={[styles.input, styles.textArea]}
+            value={editedDesc}
+            onChangeText={setEditedDesc}
+            placeholder="Description of card"
+            multiline
+            numberOfLines={6}
+          />
+        ) : (
+          <Text style={styles.description}>
+            {card.desc || 'No description'}
           </Text>
-          {card.dueComplete && (
-            <View style={styles.completeBadge}>
-              <Ionicons name="checkmark-circle" size={16} color="#5AAC44" />
-              <Text style={styles.completeText}>Terminée</Text>
-            </View>
-          )}
-        </View>
-      )}
+        )}
+      </View>
 
+      {/* Section Membres */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}> Assigned members</Text>
+        {card.members && card.members.length > 0 ? (
+          card.members.map((member) => (
+            <View key={member.id} style={styles.memberItem}>
+              <View>
+                <Text style={styles.memberName}>{member.fullName}</Text>
+                <Text style={styles.memberUsername}>@{member.username}</Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => handleRemoveMember(member.id)}
+                style={styles.removeButton}
+              >
+                <Text style={styles.removeButtonText}>Retirer</Text>
+              </TouchableOpacity>
+            </View>
+          ))
+        ) : (
+          <Text style={styles.emptyText}>No members assigned</Text>
+        )}
+      </View>
+
+      {/* Section Labels */}
       {card.labels && card.labels.length > 0 && (
         <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Ionicons name="pricetag-outline" size={20} color="#666" />
-            <Text style={styles.sectionTitle}>Labels</Text>
-          </View>
+          <Text style={styles.sectionTitle}>Labels</Text>
           <View style={styles.labelsContainer}>
             {card.labels.map((label) => (
               <View
                 key={label.id}
                 style={[
-                  styles.label,
+                  styles.labelChip,
                   { backgroundColor: label.color || '#ccc' },
                 ]}
               >
-                <Text style={styles.labelText}>{label.name || 'Sans nom'}</Text>
+                <Text style={styles.labelText}>{label.name || 'No Name'}</Text>
               </View>
             ))}
           </View>
         </View>
       )}
 
-      {card.idMembers && card.idMembers.length > 0 && (
+      {/* Date d'échéance */}
+      {card.due && (
         <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Ionicons name="people-outline" size={20} color="#666" />
-            <Text style={styles.sectionTitle}>Membres</Text>
-          </View>
-          <Text style={styles.infoText}>{card.idMembers.length} membre(s)</Text>
+          <Text style={styles.sectionTitle}>Due date</Text>
+          <Text style={styles.dueDate}>
+            {new Date(card.due).toLocaleString('fr-FR')}
+          </Text>
+          {card.dueComplete && (
+            <Text style={styles.completeTag}>Add</Text>
+          )}
         </View>
       )}
 
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Ionicons name="information-circle-outline" size={20} color="#666" />
-          <Text style={styles.sectionTitle}>Informations</Text>
-        </View>
-        <Text style={styles.infoText}>ID: {card.id}</Text>
-        {card.dateLastActivity && (
-          <Text style={styles.infoText}>
-            Dernière activité:{' '}
-            {new Date(card.dateLastActivity).toLocaleDateString('fr-FR')}
-          </Text>
+      {/* Boutons d'action */}
+      <View style={styles.actionsContainer}>
+        {isEditing ? (
+          <>
+            <TouchableOpacity
+              style={[styles.button, styles.cancelButton]}
+              onPress={() => setIsEditing(false)}
+            >
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.button, styles.saveButton]}
+              onPress={handleSave}
+            >
+              <Text style={styles.saveButtonText}>Save</Text>
+            </TouchableOpacity>
+          </>
+        ) : (
+          <TouchableOpacity
+            style={[styles.button, styles.editButton]}
+            onPress={handleEditStart}
+          >
+            <Text style={styles.editButtonText}>Update</Text>
+          </TouchableOpacity>
         )}
       </View>
-
-      <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
-        <Ionicons name="trash-outline" size={20} color="#fff" />
-        <Text style={styles.deleteButtonText}>Supprimer la carte</Text>
-      </TouchableOpacity>
-
-      <View style={styles.bottomPadding} />
     </ScrollView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#F4F5F7',
   },
   centerContainer: {
     flex: 1,
@@ -165,98 +240,137 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   errorText: {
-    marginTop: 12,
-    fontSize: 16,
-    color: '#666',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-    marginLeft: 12,
-    flex: 1,
+    color: '#EB5A46',
+    fontSize: 14,
   },
   section: {
     backgroundColor: '#fff',
-    marginTop: 12,
     padding: 16,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: '#e0e0e0',
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
-    color: '#333',
-    marginLeft: 8,
+    color: '#5E6C84',
+    marginBottom: 12,
+  },
+  cardTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#172B4D',
   },
   description: {
     fontSize: 14,
-    color: '#666',
+    color: '#172B4D',
     lineHeight: 20,
   },
-  infoText: {
+  input: {
+    borderWidth: 1,
+    borderColor: '#DFE1E6',
+    borderRadius: 8,
+    padding: 12,
     fontSize: 14,
-    color: '#666',
-    marginBottom: 4,
+    color: '#172B4D',
   },
-  completeBadge: {
+  textArea: {
+    height: 120,
+    textAlignVertical: 'top',
+  },
+  memberItem: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 8,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F4F5F7',
   },
-  completeText: {
+  memberName: {
     fontSize: 14,
-    color: '#5AAC44',
     fontWeight: '600',
-    marginLeft: 4,
+    color: '#172B4D',
+  },
+  memberUsername: {
+    fontSize: 12,
+    color: '#5E6C84',
+  },
+  removeButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: '#EB5A46',
+    borderRadius: 4,
+  },
+  removeButtonText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  emptyText: {
+    fontSize: 14,
+    color: '#5E6C84',
+    fontStyle: 'italic',
   },
   labelsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    gap: 8,
   },
-  label: {
+  labelChip: {
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 4,
-    marginRight: 8,
-    marginBottom: 8,
   },
   labelText: {
     color: '#fff',
     fontSize: 12,
     fontWeight: '600',
   },
-  deleteButton: {
+  dueDate: {
+    fontSize: 14,
+    color: '#172B4D',
+  },
+  completeTag: {
+    marginTop: 8,
+    fontSize: 12,
+    color: '#61BD4F',
+    fontWeight: '600',
+  },
+  actionsContainer: {
     flexDirection: 'row',
-    backgroundColor: '#EB5A46',
-    marginHorizontal: 16,
-    marginTop: 20,
+    padding: 16,
+    gap: 12,
+    backgroundColor: '#fff',
+    marginBottom: 20,
+  },
+  button: {
+    flex: 1,
     padding: 14,
     borderRadius: 8,
     alignItems: 'center',
-    justifyContent: 'center',
   },
-  deleteButtonText: {
+  editButton: {
+    backgroundColor: '#0079BF',
+  },
+  editButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
-    marginLeft: 8,
   },
-  bottomPadding: {
-    height: 40,
+  cancelButton: {
+    backgroundColor: '#F4F5F7',
+  },
+  cancelButtonText: {
+    color: '#5E6C84',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  saveButton: {
+    backgroundColor: '#61BD4F',
+  },
+  saveButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
+
+export default CardDetailScreen;
