@@ -1,18 +1,91 @@
-import axios from 'axios';
+import trelloClient from '../../../api/trello/client';
 
-const API_KEY = process.env.EXPO_PUBLIC_TRELLO_API_KEY;
-const TOKEN = process.env.EXPO_PUBLIC_TOKEN;
-const BASE_URL = process.env.EXPO_PUBLIC_TRELLO_API_BASE_URL;
+/**
+ * Service pour gérer les listes
+ */
+const listService = {
+  /**
+   * Récupérer une liste par son ID
+   */
+  getListById: async (listId) => {
+    try {
+      const response = await trelloClient.get(`/lists/${listId}`, {
+        params: {
+          fields: 'all',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error retrieving list:', error);
+      throw error;
+    }
+  },
 
-export const createList = (boardId, name) =>
-  axios.post(`${BASE_URL}/lists?name=${name}&idBoard=${boardId}&key=${API_KEY}&token=${TOKEN}`);
+  /**
+   * Récupérer les cartes d'une liste
+   */
+  getListCards: async (listId) => {
+    try {
+      const response = await trelloClient.get(`/lists/${listId}/cards`, {
+        params: {
+          fields: 'id,name,desc,due,dueComplete,labels',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error retrieving list cards:', error);
+      throw error;
+    }
+  },
 
-export const getLists = (boardId) =>
-  axios.get(`${BASE_URL}/members/me/boards?key=${API_KEY}&token=${TOKEN}`);
-//   axios.get(`${BASE_URL}/boards/${boardId}/lists?key=${API_KEY}&token=${TOKEN}`);
+  /**
+   * Créer une nouvelle liste
+   */
+  createList: async (boardId, name) => {
+    try {
+      const response = await trelloClient.post('/lists', null, {
+        params: {
+          name,
+          idBoard: boardId,
+          pos: 'bottom',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error creating list:', error);
+      throw error;
+    }
+  },
 
-export const updateList = (listId, name) =>
-  axios.put(`${BASE_URL}/lists/${listId}?name=${name}&key=${API_KEY}&token=${TOKEN}`);
+  /**
+   * Mettre à jour une liste
+   */
+  updateList: async (listId, name) => {
+    try {
+      const response = await trelloClient.put(`/lists/${listId}`, null, {
+        params: { name },
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error updating list:', error);
+      throw error;
+    }
+  },
 
-export const archiveList = (listId) =>
-  axios.put(`${BASE_URL}/lists/${listId}/closed?value=true&key=${API_KEY}&token=${TOKEN}`);
+  /**
+   * Archiver une liste
+   */
+  archiveList: async (listId) => {
+    try {
+      const response = await trelloClient.put(`/lists/${listId}/closed`, null, {
+        params: { value: true },
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error archiving list:', error);
+      throw error;
+    }
+  },
+};
+
+export default listService;
