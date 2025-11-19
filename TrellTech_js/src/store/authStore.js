@@ -2,13 +2,10 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { setupInterceptors } from '../api/trello/interceptors';
+AsyncStorage.removeItem("trelltech-auth-storage");
 
-// Initialiser les intercepteurs au démarrage
 setupInterceptors();
 
-/**
- * Store d'authentification avec persistence
- */
 export const useAuthStore = create(
   persist(
     (set, get) => ({
@@ -46,6 +43,29 @@ export const useAuthStore = create(
     }),
     {
       name: 'trelltech-auth-storage',
+      version: 2, // version pour migration future
+
+
+
+migrate: (persistedState) => {
+  if (!persistedState?.state) return persistedState;
+
+  const s = persistedState.state;
+
+  return {
+    ...persistedState,
+    state: {
+      ...s,
+      isAuthenticated:
+        s.isAuthenticated === true || s.isAuthenticated === "true",
+      isLoading:
+        s.isLoading === true || s.isLoading === "true",
+    },
+  };
+},
+
+
+
       storage: {
         getItem: async (name) => {
           const value = await AsyncStorage.getItem(name);

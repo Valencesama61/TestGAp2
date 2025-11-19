@@ -17,7 +17,7 @@ export const WorkspaceSchema = PropTypes.shape({
 
 /**
  * Schema pour un Board
- */
+ */ 
 export const BoardSchema = PropTypes.shape({
   id: PropTypes.string.isRequired,
   name: PropTypes.string.isRequired,
