@@ -15,66 +15,48 @@ import * as WebBrowser from 'expo-web-browser';
 
 export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
+  const [manualToken, setManualToken] = useState("");
   const setAuth = useAuthStore((state) => state.setAuth);
 
   const handleTrelloLogin = async () => {
     setLoading(true);
     try {
-      // Ouvrir le navigateur pour l'authentification Trello
-      const result = await WebBrowser.openBrowserAsync(TRELLO_AUTH_URL);
-
-      setLoading(false);
-
-      // Informer l'utilisateur de copier le token
-      Alert.alert(
-        'Authentification Trello',
-        'Une page Trello s\'est ouverte dans votre navigateur.\n\n' +
-        '1. Autorisez TrellTech à accéder à votre compte\n' +
-        '2. Copiez le token qui s\'affiche\n' +
-        '3. Revenez ici et cliquez sur "Utiliser un token manuel" pour coller le token',
-        [
-          {
-            text: 'Utiliser un token manuel',
-            onPress: handleManualToken
-          },
-          {
-            text: 'OK',
-            style: 'cancel'
-          }
-        ]
+      const result = await WebBrowser.openAuthSessionAsync(
+        `${TRELLO_AUTH_URL}`,
       );
+
+      if (result.type === 'success') {
+        const url = result.url;
+        const tokenMatch = url.match(/token=([^&]+)/);
+
+        if (tokenMatch && tokgitenMatch[1]) {
+          await setAuth(tokenMatch[1]);
+          Alert.alert('Succès', 'Connexion réussie !');
+        } else {
+          Alert.alert('Erreur', 'Impossible de récupérer le token');
+        }
+      }
     } catch (error) {
-      console.error('Login error:', error);
-      Alert.alert('Erreur', 'Échec de l\'ouverture du navigateur');
+      Alert.alert('Erreur', 'Échec de la connexion');
+    } finally {
       setLoading(false);
     }
   };
 
-  const handleManualToken = async () => {
-    Alert.prompt(
-      'Token Manuel',
-      'Entrez votre token Trello:',
-      [
-        { text: 'Annuler', style: 'cancel' },
-        {
-          text: 'OK',
-          onPress: async (token) => {
-            if (token) {
-              setLoading(true);
-              try {
-                await setAuth(token);
-                Alert.alert('Succès', 'Connexion réussie !');
-              } catch (error) {
-                Alert.alert('Erreur', 'Token invalide');
-              } finally {
-                setLoading(false);
-              }
-            }
-          },
-        },
-      ],
-      'plain-text'
-    );
+  const handleManualTokenLogin = async () => {
+    if (!manualToken.trim()) {
+      return Alert.alert("Erreur", "Veuillez coller un token.");
+    }
+
+    setLoading(true);
+    try {
+      await setAuth(manualToken.trim());
+      Alert.alert("Succès", "Connexion réussie !");
+    } catch (err) {
+      Alert.alert("Erreur", "Token invalide");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -101,12 +83,23 @@ export default function LoginScreen() {
           )}
         </TouchableOpacity>
 
+
+        <Text style={styles.manualLabel}>Ou collez votre token manuellement :</Text>
+
+        <TextInput
+          style={styles.input}
+          placeholder="Collez votre token Trello ici"
+          value={manualToken}
+          onChangeText={setManualToken}
+          autoCapitalize="none"
+        />
+
         <TouchableOpacity
           style={[styles.button, styles.secondaryButton]}
-          onPress={handleManualToken}
+          onPress={handleManualTokenLogin}
           disabled={loading}
         >
-          <Text style={styles.secondaryButtonText}>Utiliser un token manuel</Text>
+          <Text style={styles.secondaryButtonText}>Utiliser le token manuel</Text>
         </TouchableOpacity>
 
         <View style={styles.infoBox}>
@@ -143,14 +136,27 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    justifyContent: 'center',
   },
   description: {
     fontSize: 16,
     color: '#5E6C84',
     textAlign: 'center',
     marginBottom: 40,
-    lineHeight: 22,
+  },
+  manualLabel: {
+    marginTop: 20,
+    marginBottom: 8,
+    fontSize: 14,
+    color: '#5E6C84',
+  },
+  input: {
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#0079BF',
+    padding: 12,
+    borderRadius: 8,
+    fontSize: 14,
+    marginBottom: 12,
   },
   button: {
     padding: 16,
@@ -162,9 +168,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#0079BF',
   },
   secondaryButton: {
-    backgroundColor: 'transparent',
     borderWidth: 1,
     borderColor: '#0079BF',
+    backgroundColor: 'transparent',
   },
   buttonText: {
     color: '#fff',
@@ -187,6 +193,5 @@ const styles = StyleSheet.create({
   infoText: {
     fontSize: 12,
     color: '#5E6C84',
-    lineHeight: 16,
   },
 });

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { ActivityIndicator, View } from 'react-native';
 
@@ -10,14 +10,20 @@ import MainTabNavigator from './MainTabNavigator';
 
 // Store
 import { useAuthStore } from '../store/authStore';
+import LoadingScreen from '../features/auth/screens/LoadingScreen';
 
 const Stack = createNativeStackNavigator();
 
 export default function AppNavigator() {
+  const [showLoading, setShowLoading] = useState(true);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const isLoading = useAuthStore((state) => state.isLoading);
 
   // Afficher un loader pendant l'initialisation
+  if (showLoading) {
+    return <LoadingScreen onFinish={() => setShowLoading(false)} />;
+  }
+
   if (isLoading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -25,6 +31,7 @@ export default function AppNavigator() {
       </View>
     );
   }
+
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
