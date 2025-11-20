@@ -63,7 +63,9 @@ const listService = {
   updateList: async (listId, name) => {
     try {
       const response = await trelloClient.put(`/lists/${listId}`, null, {
-        params: { name },
+        params: {
+          name,
+        },
       });
       return response.data;
     } catch (error) {
@@ -78,7 +80,9 @@ const listService = {
   archiveList: async (listId) => {
     try {
       const response = await trelloClient.put(`/lists/${listId}/closed`, null, {
-        params: { value: true },
+        params: {
+          value: 'true',
+        },
       });
       return response.data;
     } catch (error) {

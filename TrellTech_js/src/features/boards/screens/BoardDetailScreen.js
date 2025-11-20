@@ -173,15 +173,15 @@ const BoardDetailScreen = ({ route, navigation }) => {
         <View style={styles.listActions}>
           <TouchableOpacity
             onPress={() => handleEditList(list)}
-            style={styles.listActionButton}
+            style={[styles.listActionButton, styles.editListButton]}
           >
-            <Text style={styles.listActionText}>✏️</Text>
+            <Text style={styles.listActionButtonText}>Modifier</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => handleArchiveList(list)}
-            style={styles.listActionButton}
+            style={[styles.listActionButton, styles.archiveListButton]}
           >
-            <Text style={styles.listActionText}>🗑️</Text>
+            <Text style={styles.listActionButtonText}>Archiver</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -220,12 +220,12 @@ const BoardDetailScreen = ({ route, navigation }) => {
             <View style={styles.cardFooter}>
               {card.due && (
                 <Text style={styles.dueDate}>
-                  📅 {new Date(card.due).toLocaleDateString()}
+                  {new Date(card.due).toLocaleDateString()}
                 </Text>
               )}
               {card.idMembers && card.idMembers.length > 0 && (
                 <Text style={styles.membersCount}>
-                  👥 {card.idMembers.length}
+                  {card.idMembers.length} membre(s)
                 </Text>
               )}
             </View>
@@ -383,13 +383,23 @@ const styles = StyleSheet.create({
   },
   listActions: {
     flexDirection: 'row',
-    gap: 4,
+    gap: 6,
   },
   listActionButton: {
-    padding: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
   },
-  listActionText: {
-    fontSize: 16,
+  editListButton: {
+    backgroundColor: '#0079BF',
+  },
+  archiveListButton: {
+    backgroundColor: '#EB5A46',
+  },
+  listActionButtonText: {
+    fontSize: 11,
+    color: '#fff',
+    fontWeight: '600',
   },
   cardCount: {
     fontSize: 12,
