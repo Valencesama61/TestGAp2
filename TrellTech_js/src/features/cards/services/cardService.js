@@ -173,6 +173,41 @@ const cardService = {
       throw error;
     }
   },
+
+  /**
+   * Ajouter un label à une carte
+   * @param {string} cardId - ID de la carte
+   * @param {string} labelId - ID du label
+   * @returns {Promise<Array>} Liste des labels de la carte
+   */
+  addLabelToCard: async (cardId, labelId) => {
+    try {
+      const response = await trelloClient.post(
+        CARDS_ENDPOINTS.addLabel(cardId),
+        null,
+        { params: { value: labelId } }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error adding label:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Retirer un label d'une carte
+   * @param {string} cardId - ID de la carte
+   * @param {string} labelId - ID du label
+   * @returns {Promise<void>}
+   */
+  removeLabelFromCard: async (cardId, labelId) => {
+    try {
+      await trelloClient.delete(CARDS_ENDPOINTS.removeLabel(cardId, labelId));
+    } catch (error) {
+      console.error('Error removing label:', error);
+      throw error;
+    }
+  },
 };
 
 export default cardService;

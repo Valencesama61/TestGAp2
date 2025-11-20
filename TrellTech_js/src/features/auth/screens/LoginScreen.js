@@ -20,28 +20,32 @@ export default function LoginScreen() {
   const handleTrelloLogin = async () => {
     setLoading(true);
     try {
-      const result = await WebBrowser.openAuthSessionAsync(
-        `${TRELLO_AUTH_URL}&return_url=trelltech://auth`,
-        'trelltech://auth'
-      );
+      // Ouvrir le navigateur pour l'authentification Trello
+      const result = await WebBrowser.openBrowserAsync(TRELLO_AUTH_URL);
 
-      if (result.type === 'success') {
-        // Extraire le token de l'URL
-        const url = result.url;
-        const tokenMatch = url.match(/token=([^&]+)/);
-        
-        if (tokenMatch && tokenMatch[1]) {
-          const token = tokenMatch[1];
-          await setAuth(token);
-          Alert.alert('Succès', 'Connexion réussie !');
-        } else {
-          Alert.alert('Erreur', 'Impossible de récupérer le token');
-        }
-      }
+      setLoading(false);
+
+      // Informer l'utilisateur de copier le token
+      Alert.alert(
+        'Authentification Trello',
+        'Une page Trello s\'est ouverte dans votre navigateur.\n\n' +
+        '1. Autorisez TrellTech à accéder à votre compte\n' +
+        '2. Copiez le token qui s\'affiche\n' +
+        '3. Revenez ici et cliquez sur "Utiliser un token manuel" pour coller le token',
+        [
+          {
+            text: 'Utiliser un token manuel',
+            onPress: handleManualToken
+          },
+          {
+            text: 'OK',
+            style: 'cancel'
+          }
+        ]
+      );
     } catch (error) {
       console.error('Login error:', error);
-      Alert.alert('Erreur', 'Échec de la connexion');
-    } finally {
+      Alert.alert('Erreur', 'Échec de l\'ouverture du navigateur');
       setLoading(false);
     }
   };

@@ -1,11 +1,11 @@
 import trelloClient from '../../../api/trello/client';
 
 /**
- * Service pour gérer les boards
+ * Service pour gï¿½rer les boards
  */
 const boardService = {
   /**
-   * Récupérer tous les boards de l'utilisateur
+   * Rï¿½cupï¿½rer tous les boards de l'utilisateur
    */
   getBoards: async () => {
     try {
@@ -23,7 +23,7 @@ const boardService = {
   },
 
   /**
-   * Récupérer un board par son ID
+   * Rï¿½cupï¿½rer un board par son ID
    */
   getBoardById: async (boardId) => {
     try {
@@ -40,7 +40,7 @@ const boardService = {
   },
 
   /**
-   * Récupérer les listes d'un board
+   * Rï¿½cupï¿½rer les listes d'un board
    */
   getBoardLists: async (boardId) => {
     try {
@@ -58,7 +58,7 @@ const boardService = {
   },
 
   /**
-   * Créer un nouveau board
+   * Crï¿½er un nouveau board
    */
   createBoard: async (name, desc = '') => {
     try {
@@ -72,6 +72,48 @@ const boardService = {
       return response.data;
     } catch (error) {
       console.error('Error creating board:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Mettre Ã  jour un board
+   */
+  updateBoard: async (boardId, updates) => {
+    try {
+      const response = await trelloClient.put(`/boards/${boardId}`, null, {
+        params: updates,
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error updating board:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Supprimer un board
+   */
+  deleteBoard: async (boardId) => {
+    try {
+      await trelloClient.delete(`/boards/${boardId}`);
+    } catch (error) {
+      console.error('Error deleting board:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Archiver un board
+   */
+  archiveBoard: async (boardId) => {
+    try {
+      const response = await trelloClient.put(`/boards/${boardId}`, null, {
+        params: { closed: true },
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error archiving board:', error);
       throw error;
     }
   },

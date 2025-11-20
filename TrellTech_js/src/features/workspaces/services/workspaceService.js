@@ -1,11 +1,11 @@
 import trelloClient from '../../../api/trello/client';
 
 /**
- * Service pour gérer les workspaces (Organizations)
+ * Service pour gï¿½rer les workspaces (Organizations)
  */
 const workspaceService = {
   /**
-   * Récupérer tous les workspaces de l'utilisateur
+   * Rï¿½cupï¿½rer tous les workspaces de l'utilisateur
    */
   getWorkspaces: async () => {
     try {
@@ -22,7 +22,7 @@ const workspaceService = {
   },
 
   /**
-   * Récupérer un workspace par son ID
+   * Rï¿½cupï¿½rer un workspace par son ID
    */
   getWorkspaceById: async (workspaceId) => {
     try {
@@ -39,7 +39,7 @@ const workspaceService = {
   },
 
   /**
-   * Récupérer les boards d'un workspace
+   * Rï¿½cupï¿½rer les boards d'un workspace
    */
   getWorkspaceBoards: async (workspaceId) => {
     try {
@@ -52,6 +52,52 @@ const workspaceService = {
       return response.data;
     } catch (error) {
       console.error('Error retrieving workspace boards:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * CrÃ©er un nouveau workspace
+   * Note: NÃ©cessite des permissions spÃ©ciales
+   */
+  createWorkspace: async (displayName, desc = '') => {
+    try {
+      const response = await trelloClient.post('/organizations', null, {
+        params: {
+          displayName,
+          desc,
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error creating workspace:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Mettre Ã  jour un workspace
+   */
+  updateWorkspace: async (workspaceId, updates) => {
+    try {
+      const response = await trelloClient.put(`/organizations/${workspaceId}`, null, {
+        params: updates,
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error updating workspace:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Supprimer un workspace
+   */
+  deleteWorkspace: async (workspaceId) => {
+    try {
+      await trelloClient.delete(`/organizations/${workspaceId}`);
+    } catch (error) {
+      console.error('Error deleting workspace:', error);
       throw error;
     }
   },

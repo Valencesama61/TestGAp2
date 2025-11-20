@@ -86,6 +86,28 @@ const listService = {
       throw error;
     }
   },
+
+  /**
+   * Déplacer toutes les cartes d'une liste vers une autre
+   */
+  moveAllCards: async (sourceListId, targetListId) => {
+    try {
+      const response = await trelloClient.post(
+        `/lists/${sourceListId}/moveAllCards`,
+        null,
+        {
+          params: {
+            idBoard: targetListId,
+            idList: targetListId,
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error moving all cards:', error);
+      throw error;
+    }
+  },
 };
 
 export default listService;
