@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -7,13 +7,23 @@ import {
   StyleSheet,
   ActivityIndicator,
   ScrollView,
+  Alert,
 } from 'react-native';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import trelloClient from '../../../api/trello/client';
 import { BOARDS_ENDPOINTS } from '../../../api/trello/endpoints';
+import boardService from '../services/boardService';
+import listService from '../../lists/services/listService';
+import BoardFormModal from '../components/BoardFormModal';
+import ListFormModal from '../../lists/components/ListFormModal';
 
 const BoardDetailScreen = ({ route, navigation }) => {
   const { boardId, boardName } = route.params;
+  const [editBoardModalVisible, setEditBoardModalVisible] = useState(false);
+  const [createListModalVisible, setCreateListModalVisible] = useState(false);
+  const [editListModalVisible, setEditListModalVisible] = useState(false);
+  const [selectedList, setSelectedList] = useState(null);
+  const queryClient = useQueryClient();
 
   const { data: lists, isLoading, error } = useQuery({
     queryKey: ['board-lists', boardId],
@@ -32,6 +42,76 @@ const BoardDetailScreen = ({ route, navigation }) => {
     enabled: !!boardId,
   });
 
+  const { data: board } = useQuery({
+    queryKey: ['board', boardId],
+    queryFn: async () => {
+      return await boardService.getBoardById(boardId);
+    },
+    enabled: !!boardId,
+  });
+
+  const updateBoardMutation = useMutation({
+    mutationFn: ({ id, updates }) => boardService.updateBoard(id, updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['board', boardId]);
+      queryClient.invalidateQueries(['boards']);
+      Alert.alert('Succès', 'Board modifié avec succès');
+    },
+    onError: (error) => {
+      Alert.alert('Erreur', 'Impossible de modifier le board');
+      console.error(error);
+    },
+  });
+
+  const deleteBoardMutation = useMutation({
+    mutationFn: (id) => boardService.deleteBoard(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['boards']);
+      Alert.alert('Succès', 'Board supprimé avec succès');
+      navigation.goBack();
+    },
+    onError: (error) => {
+      Alert.alert('Erreur', 'Impossible de supprimer le board');
+      console.error(error);
+    },
+  });
+
+  const createListMutation = useMutation({
+    mutationFn: ({ boardId, name }) => listService.createList(boardId, name),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['board-lists', boardId]);
+      Alert.alert('Succès', 'Liste créée avec succès');
+    },
+    onError: (error) => {
+      Alert.alert('Erreur', 'Impossible de créer la liste');
+      console.error(error);
+    },
+  });
+
+  const updateListMutation = useMutation({
+    mutationFn: ({ listId, name }) => listService.updateList(listId, name),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['board-lists', boardId]);
+      Alert.alert('Succès', 'Liste modifiée avec succès');
+    },
+    onError: (error) => {
+      Alert.alert('Erreur', 'Impossible de modifier la liste');
+      console.error(error);
+    },
+  });
+
+  const archiveListMutation = useMutation({
+    mutationFn: (listId) => listService.archiveList(listId),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['board-lists', boardId]);
+      Alert.alert('Succès', 'Liste archivée avec succès');
+    },
+    onError: (error) => {
+      Alert.alert('Erreur', 'Impossible d\'archiver la liste');
+      console.error(error);
+    },
+  });
+
   const handleListPress = (list) => {
     navigation.navigate('CardsList', {
       listId: list.id,
@@ -39,12 +119,73 @@ const BoardDetailScreen = ({ route, navigation }) => {
     });
   };
 
+  const handleUpdateBoard = async (id, updates) => {
+    await updateBoardMutation.mutateAsync({ id, updates });
+  };
+
+  const handleDeleteBoard = () => {
+    Alert.alert(
+      'Supprimer le board',
+      `Êtes-vous sûr de vouloir supprimer "${boardName}" ?`,
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Supprimer',
+          style: 'destructive',
+          onPress: () => deleteBoardMutation.mutate(boardId),
+        },
+      ]
+    );
+  };
+
+  const handleCreateList = async (boardId, name) => {
+    await createListMutation.mutateAsync({ boardId, name });
+  };
+
+  const handleUpdateList = async (listId, name) => {
+    await updateListMutation.mutateAsync({ listId, name });
+  };
+
+  const handleEditList = (list) => {
+    setSelectedList(list);
+    setEditListModalVisible(true);
+  };
+
+  const handleArchiveList = (list) => {
+    Alert.alert(
+      'Archiver la liste',
+      `Êtes-vous sûr de vouloir archiver "${list.name}" ?`,
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Archiver',
+          style: 'destructive',
+          onPress: () => archiveListMutation.mutate(list.id),
+        },
+      ]
+    );
+  };
+
   const renderList = ({ item: list }) => (
     <View style={styles.listContainer}>
       <View style={styles.listHeader}>
         <Text style={styles.listName}>{list.name}</Text>
-        <Text style={styles.cardCount}>{list.cards?.length || 0} carte(s)</Text>
+        <View style={styles.listActions}>
+          <TouchableOpacity
+            onPress={() => handleEditList(list)}
+            style={styles.listActionButton}
+          >
+            <Text style={styles.listActionText}>✏️</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => handleArchiveList(list)}
+            style={styles.listActionButton}
+          >
+            <Text style={styles.listActionText}>🗑️</Text>
+          </TouchableOpacity>
+        </View>
       </View>
+      <Text style={styles.cardCount}>{list.cards?.length || 0} carte(s)</Text>
       
       <ScrollView style={styles.cardsContainer}>
         {list.cards?.map((card) => (
@@ -124,6 +265,28 @@ const BoardDetailScreen = ({ route, navigation }) => {
         <Text style={styles.headerSubtitle}>
           {lists?.length || 0} liste(s)
         </Text>
+
+        {/* Boutons d'action pour le board */}
+        <View style={styles.actionsContainer}>
+          <TouchableOpacity
+            style={[styles.actionButton, styles.createListButton]}
+            onPress={() => setCreateListModalVisible(true)}
+          >
+            <Text style={styles.actionButtonText}>+ Liste</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.actionButton, styles.editButton]}
+            onPress={() => setEditBoardModalVisible(true)}
+          >
+            <Text style={styles.actionButtonText}>Modifier</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.actionButton, styles.deleteButton]}
+            onPress={handleDeleteBoard}
+          >
+            <Text style={styles.actionButtonText}>Supprimer</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <FlatList
@@ -133,6 +296,33 @@ const BoardDetailScreen = ({ route, navigation }) => {
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.listsContainer}
+      />
+
+      {/* Modal de modification du board */}
+      <BoardFormModal
+        visible={editBoardModalVisible}
+        onClose={() => setEditBoardModalVisible(false)}
+        onUpdate={handleUpdateBoard}
+        board={board}
+      />
+
+      {/* Modal de création de liste */}
+      <ListFormModal
+        visible={createListModalVisible}
+        onClose={() => setCreateListModalVisible(false)}
+        onCreate={handleCreateList}
+        boardId={boardId}
+      />
+
+      {/* Modal de modification de liste */}
+      <ListFormModal
+        visible={editListModalVisible}
+        onClose={() => {
+          setEditListModalVisible(false);
+          setSelectedList(null);
+        }}
+        onUpdate={handleUpdateList}
+        list={selectedList}
       />
     </View>
   );
@@ -183,20 +373,28 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   listName: {
     fontSize: 16,
     fontWeight: '600',
     color: '#172B4D',
+    flex: 1,
+  },
+  listActions: {
+    flexDirection: 'row',
+    gap: 4,
+  },
+  listActionButton: {
+    padding: 4,
+  },
+  listActionText: {
+    fontSize: 16,
   },
   cardCount: {
     fontSize: 12,
     color: '#5E6C84',
-    backgroundColor: '#fff',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 12,
+    marginBottom: 12,
   },
   cardsContainer: {
     flex: 1,
@@ -257,6 +455,31 @@ const styles = StyleSheet.create({
   addCardText: {
     color: '#5E6C84',
     fontSize: 14,
+  },
+  actionsContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 12,
+  },
+  actionButton: {
+    flex: 1,
+    padding: 10,
+    borderRadius: 6,
+    alignItems: 'center',
+  },
+  createListButton: {
+    backgroundColor: '#61BD4F',
+  },
+  editButton: {
+    backgroundColor: '#0079BF',
+  },
+  deleteButton: {
+    backgroundColor: '#EB5A46',
+  },
+  actionButtonText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '600',
   },
 });
 

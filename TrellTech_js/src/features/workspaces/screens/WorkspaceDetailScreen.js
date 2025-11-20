@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -6,13 +6,18 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import trelloClient from '../../../api/trello/client';
 import { WORKSPACES_ENDPOINTS } from '../../../api/trello/endpoints';
+import workspaceService from '../services/workspaceService';
+import WorkspaceFormModal from '../components/WorkspaceFormModal';
 
 const WorkspaceDetailScreen = ({ route, navigation }) => {
   const { workspaceId, workspaceName } = route.params;
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const queryClient = useQueryClient();
 
   const { data: boards, isLoading, error } = useQuery({
     queryKey: ['workspace-boards', workspaceId],
@@ -25,11 +30,64 @@ const WorkspaceDetailScreen = ({ route, navigation }) => {
     enabled: !!workspaceId,
   });
 
+  const { data: workspace } = useQuery({
+    queryKey: ['workspace', workspaceId],
+    queryFn: async () => {
+      return await workspaceService.getWorkspaceById(workspaceId);
+    },
+    enabled: !!workspaceId,
+  });
+
+  const updateWorkspaceMutation = useMutation({
+    mutationFn: ({ id, updates }) => workspaceService.updateWorkspace(id, updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['workspace', workspaceId]);
+      queryClient.invalidateQueries(['workspaces']);
+      Alert.alert('Succès', 'Workspace modifié avec succès');
+    },
+    onError: (error) => {
+      Alert.alert('Erreur', 'Impossible de modifier le workspace');
+      console.error(error);
+    },
+  });
+
+  const deleteWorkspaceMutation = useMutation({
+    mutationFn: (id) => workspaceService.deleteWorkspace(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['workspaces']);
+      Alert.alert('Succès', 'Workspace supprimé avec succès');
+      navigation.goBack();
+    },
+    onError: (error) => {
+      Alert.alert('Erreur', 'Impossible de supprimer le workspace');
+      console.error(error);
+    },
+  });
+
   const handleBoardPress = (board) => {
     navigation.navigate('BoardDetail', {
       boardId: board.id,
       boardName: board.name,
     });
+  };
+
+  const handleUpdateWorkspace = async (id, updates) => {
+    await updateWorkspaceMutation.mutateAsync({ id, updates });
+  };
+
+  const handleDeleteWorkspace = () => {
+    Alert.alert(
+      'Supprimer le workspace',
+      `Êtes-vous sûr de vouloir supprimer "${workspaceName}" ?`,
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Supprimer',
+          style: 'destructive',
+          onPress: () => deleteWorkspaceMutation.mutate(workspaceId),
+        },
+      ]
+    );
   };
 
   const renderBoardItem = ({ item }) => (
@@ -73,6 +131,22 @@ const WorkspaceDetailScreen = ({ route, navigation }) => {
         <Text style={styles.headerSubtitle}>
           {boards?.length || 0} tableau(x)
         </Text>
+
+        {/* Boutons d'action pour le workspace */}
+        <View style={styles.actionsContainer}>
+          <TouchableOpacity
+            style={[styles.actionButton, styles.editButton]}
+            onPress={() => setEditModalVisible(true)}
+          >
+            <Text style={styles.actionButtonText}>Modifier</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.actionButton, styles.deleteButton]}
+            onPress={handleDeleteWorkspace}
+          >
+            <Text style={styles.actionButtonText}>Supprimer</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <FlatList
@@ -80,6 +154,14 @@ const WorkspaceDetailScreen = ({ route, navigation }) => {
         keyExtractor={(item) => item.id}
         renderItem={renderBoardItem}
         contentContainerStyle={styles.listContainer}
+      />
+
+      {/* Modal de modification */}
+      <WorkspaceFormModal
+        visible={editModalVisible}
+        onClose={() => setEditModalVisible(false)}
+        onUpdate={handleUpdateWorkspace}
+        workspace={workspace}
       />
     </View>
   );
@@ -151,6 +233,28 @@ const styles = StyleSheet.create({
   boardMeta: {
     fontSize: 12,
     color: '#8993A4',
+  },
+  actionsContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 12,
+  },
+  actionButton: {
+    flex: 1,
+    padding: 10,
+    borderRadius: 6,
+    alignItems: 'center',
+  },
+  editButton: {
+    backgroundColor: '#0079BF',
+  },
+  deleteButton: {
+    backgroundColor: '#EB5A46',
+  },
+  actionButtonText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '600',
   },
 });
 
