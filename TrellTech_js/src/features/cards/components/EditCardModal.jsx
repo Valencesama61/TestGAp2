@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Modal,
   View,
@@ -11,44 +11,45 @@ import {
 } from 'react-native';
 import PropTypes from 'prop-types';
 
-const ListForm = ({ visible, boardId, onClose, onCreate, onUpdate, initialData }) => {
-  const [listName, setListName] = useState(initialData?.name || '');
+const EditCardModal = ({ visible, onClose, onUpdate, initialData }) => {
+  const [cardName, setCardName] = useState('');
+  const [cardDescription, setCardDescription] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const isEditMode = !!initialData;
+  useEffect(() => {
+    if (initialData) {
+      setCardName(initialData.name || '');
+      setCardDescription(initialData.desc || '');
+    }
+  }, [initialData]);
 
-  const handleSubmit = async () => {
-    if (!listName.trim()) {
-      alert('Le nom de la liste est requis');
+  const handleUpdate = async () => {
+    if (!cardName.trim()) {
+      alert('Le nom de la carte est requis');
       return;
     }
 
     setLoading(true);
     try {
-      if (isEditMode) {
-        await onUpdate({
-          listId: initialData.id,
-          name: listName,
-        });
-      } else {
-        await onCreate({
-          boardId,
-          name: listName,
-        });
-      }
+      await onUpdate({
+        cardId: initialData.id,
+        updates: {
+          name: cardName,
+          desc: cardDescription,
+        },
+      });
 
-      // Réinitialiser et fermer
-      setListName('');
       onClose();
     } catch (error) {
-      alert(`Erreur lors de ${isEditMode ? 'la modification' : 'la création'} de la liste`);
+      alert('Erreur lors de la modification de la carte');
     } finally {
       setLoading(false);
     }
   };
 
   const handleClose = () => {
-    setListName(initialData?.name || '');
+    setCardName(initialData?.name || '');
+    setCardDescription(initialData?.desc || '');
     onClose();
   };
 
@@ -64,16 +65,23 @@ const ListForm = ({ visible, boardId, onClose, onCreate, onUpdate, initialData }
         style={styles.modalOverlay}
       >
         <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>
-            {isEditMode ? 'Modifier la liste' : 'Nouvelle liste'}
-          </Text>
+          <Text style={styles.modalTitle}>Modifier la carte</Text>
 
           <TextInput
             style={styles.input}
-            placeholder="Nom de la liste *"
-            value={listName}
-            onChangeText={setListName}
+            placeholder="Nom de la carte *"
+            value={cardName}
+            onChangeText={setCardName}
             autoFocus
+          />
+
+          <TextInput
+            style={[styles.input, styles.textArea]}
+            placeholder="Description (optionnel)"
+            value={cardDescription}
+            onChangeText={setCardDescription}
+            multiline
+            numberOfLines={4}
           />
 
           <View style={styles.buttonContainer}>
@@ -86,12 +94,12 @@ const ListForm = ({ visible, boardId, onClose, onCreate, onUpdate, initialData }
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.button, styles.submitButton]}
-              onPress={handleSubmit}
-              disabled={loading || !listName.trim()}
+              style={[styles.button, styles.updateButton]}
+              onPress={handleUpdate}
+              disabled={loading || !cardName.trim()}
             >
-              <Text style={styles.submitButtonText}>
-                {loading ? 'Enregistrement...' : isEditMode ? 'Modifier' : 'Créer'}
+              <Text style={styles.updateButtonText}>
+                {loading ? 'Modification...' : 'Modifier'}
               </Text>
             </TouchableOpacity>
           </View>
@@ -101,15 +109,14 @@ const ListForm = ({ visible, boardId, onClose, onCreate, onUpdate, initialData }
   );
 };
 
-ListForm.propTypes = {
+EditCardModal.propTypes = {
   visible: PropTypes.bool.isRequired,
-  boardId: PropTypes.string,
   onClose: PropTypes.func.isRequired,
-  onCreate: PropTypes.func,
-  onUpdate: PropTypes.func,
+  onUpdate: PropTypes.func.isRequired,
   initialData: PropTypes.shape({
     id: PropTypes.string.isRequired,
-    name: PropTypes.string.isRequired,
+    name: PropTypes.string,
+    desc: PropTypes.string,
   }),
 };
 
@@ -140,6 +147,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginBottom: 16,
   },
+  textArea: {
+    height: 100,
+    textAlignVertical: 'top',
+  },
   buttonContainer: {
     flexDirection: 'row',
     gap: 12,
@@ -158,14 +169,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
-  submitButton: {
-    backgroundColor: '#0079BF',
+  updateButton: {
+    backgroundColor: '#61BD4F',
   },
-  submitButtonText: {
+  updateButtonText: {
     color: '#fff',
     fontSize: 14,
     fontWeight: '600',
   },
 });
 
-export default ListForm;
+export default EditCardModal;
