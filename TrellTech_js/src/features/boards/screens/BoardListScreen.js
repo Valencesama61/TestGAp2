@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -6,18 +6,12 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import trelloClient from '../../../api/trello/client';
 import { BOARDS_ENDPOINTS } from '../../../api/trello/endpoints';
-import boardService from '../services/boardService';
-import BoardFormModal from '../components/BoardFormModal';
 
 const BoardListScreen = ({ navigation }) => {
-  const [modalVisible, setModalVisible] = useState(false);
-  const queryClient = useQueryClient();
-
   const { data: boards, isLoading, error } = useQuery({
     queryKey: ['boards'],
     queryFn: async () => {
@@ -27,18 +21,6 @@ const BoardListScreen = ({ navigation }) => {
         },
       });
       return response.data.filter(board => !board.closed);
-    },
-  });
-
-  const createBoardMutation = useMutation({
-    mutationFn: ({ name, desc }) => boardService.createBoard(name, desc),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['boards']);
-      Alert.alert('Succès', 'Board créé avec succès');
-    },
-    onError: (error) => {
-      Alert.alert('Erreur', 'Impossible de créer le board');
-      console.error(error);
     },
   });
 
@@ -86,10 +68,6 @@ const BoardListScreen = ({ navigation }) => {
     );
   }
 
-  const handleCreateBoard = async (name, description) => {
-    await createBoardMutation.mutateAsync({ name, desc: description });
-  };
-
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -106,22 +84,8 @@ const BoardListScreen = ({ navigation }) => {
         contentContainerStyle={styles.listContainer}
         numColumns={2}
       />
-
-      {/* Bouton flottant pour créer un board */}
-      <TouchableOpacity
-        style={styles.fab}
-        onPress={() => setModalVisible(true)}
-      >
-        <Text style={styles.fabText}>+</Text>
-      </TouchableOpacity>
-
-      {/* Modal de création */}
-      <BoardFormModal
-        visible={modalVisible}
-        onClose={() => setModalVisible(false)}
-        onCreate={handleCreateBoard}
-      />
     </View>
+
   );
 };
 
@@ -201,27 +165,6 @@ const styles = StyleSheet.create({
   boardDate: {
     fontSize: 10,
     color: '#8993A4',
-  },
-  fab: {
-    position: 'absolute',
-    bottom: 24,
-    right: 24,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#0079BF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  fabText: {
-    fontSize: 32,
-    color: '#fff',
-    fontWeight: '300',
   },
 });
 

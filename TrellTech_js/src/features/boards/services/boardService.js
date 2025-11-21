@@ -109,9 +109,7 @@ const boardService = {
   archiveBoard: async (boardId) => {
     try {
       const response = await trelloClient.put(`/boards/${boardId}`, null, {
-        params: {
-          closed: 'true',
-        },
+        params: { closed: true },
       });
       return response.data;
     } catch (error) {

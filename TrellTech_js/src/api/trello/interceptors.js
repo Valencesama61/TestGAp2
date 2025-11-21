@@ -2,10 +2,10 @@ import trelloClient from './client';
 import { getAuthToken, clearAuthToken } from '../../store/authStore';
 
 /**
- * Configuration des intercepteurs
+ * Interceptors config
  */
 export const setupInterceptors = () => {
-  // Intercepteur de requêtes
+  // interceptors query
   trelloClient.interceptors.request.use(
     (config) => {
       const token = getAuthToken();
@@ -17,7 +17,7 @@ export const setupInterceptors = () => {
         };
       }
 
-      // Logger en développement
+      // Logger in development
       if (__DEV__) {
         console.log('API Request:', {
           method: config.method?.toUpperCase(),
@@ -34,7 +34,7 @@ export const setupInterceptors = () => {
     }
   );
 
-  // Intercepteur de réponses
+  // interceptors responses
   trelloClient.interceptors.response.use(
     (response) => {
       if (__DEV__) {
@@ -53,7 +53,7 @@ export const setupInterceptors = () => {
 };
 
 /**
- * Gestion centralisée des erreurs
+ * error handler
  */
 const handleAPIError = (error) => {
   if (error.response) {
@@ -63,7 +63,6 @@ const handleAPIError = (error) => {
       case 401:
         console.error('Unauthorized - Invalid or expired token');
         clearAuthToken();
-        // Vous pourrez utiliser votre navigation ici
         // import { NavigationService } from '../../navigation/services';
         // NavigationService.navigate('Login');
         break;

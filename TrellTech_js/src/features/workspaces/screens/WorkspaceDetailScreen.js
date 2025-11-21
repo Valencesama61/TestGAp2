@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -6,147 +6,197 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
+  Modal,
+  TextInput,
   Alert,
-} from 'react-native';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import trelloClient from '../../../api/trello/client';
-import { WORKSPACES_ENDPOINTS } from '../../../api/trello/endpoints';
-import workspaceService from '../services/workspaceService';
-import WorkspaceFormModal from '../components/WorkspaceFormModal';
+} from "react-native";
+import { Picker } from '@react-native-picker/picker';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import trelloClient from "../../../api/trello/client";
+import { WORKSPACES_ENDPOINTS, BOARDS_ENDPOINTS } from "../../../api/trello/endpoints";
 
 const WorkspaceDetailScreen = ({ route, navigation }) => {
   const { workspaceId, workspaceName } = route.params;
-  const [editModalVisible, setEditModalVisible] = useState(false);
   const queryClient = useQueryClient();
 
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalAction, setModalAction] = useState(null);
+  const [modalName, setModalName] = useState("");
+  const [modalDesc, setModalDesc] = useState("");
+  const [modalTemplate, setModalTemplate] = useState("kanban");
+  const [selectedBoard, setSelectedBoard] = useState(null);
+
   const { data: boards, isLoading, error } = useQuery({
-    queryKey: ['workspace-boards', workspaceId],
+    queryKey: ["workspace-boards", workspaceId],
     queryFn: async () => {
       const response = await trelloClient.get(
         WORKSPACES_ENDPOINTS.getBoards(workspaceId)
       );
-      return response.data;
+      return response.data.map(board => ({
+        ...board,
+        template: board.prefs?.templateBoardId || "kanban"
+      }));
     },
     enabled: !!workspaceId,
   });
 
-  const { data: workspace } = useQuery({
-    queryKey: ['workspace', workspaceId],
-    queryFn: async () => {
-      return await workspaceService.getWorkspaceById(workspaceId);
-    },
-    enabled: !!workspaceId,
-  });
-
-  const updateWorkspaceMutation = useMutation({
-    mutationFn: ({ id, updates }) => workspaceService.updateWorkspace(id, updates),
+  const addBoardMutation = useMutation({
+    mutationFn: async ({ name, desc, template }) =>
+      trelloClient.post(BOARDS_ENDPOINTS.create, {
+        idOrganization: workspaceId,
+        name,
+        desc,
+        prefs: {
+          templateBoardId: template,
+        },
+      }),
     onSuccess: () => {
-      queryClient.invalidateQueries(['workspace', workspaceId]);
-      queryClient.invalidateQueries(['workspaces']);
-      Alert.alert('Succès', 'Workspace modifié avec succès');
-    },
-    onError: (error) => {
-      Alert.alert('Erreur', 'Impossible de modifier le workspace');
-      console.error(error);
+      queryClient.invalidateQueries(["workspace-boards", workspaceId]);
+      closeModal();
     },
   });
 
-  const deleteWorkspaceMutation = useMutation({
-    mutationFn: (id) => workspaceService.deleteWorkspace(id),
+  const updateBoardMutation = useMutation({
+    mutationFn: async ({ id, name, desc, template }) =>
+      trelloClient.put(BOARDS_ENDPOINTS.update(id), { 
+        name, 
+        desc, 
+        prefs: { templateBoardId: template } 
+      }),
     onSuccess: () => {
-      queryClient.invalidateQueries(['workspaces']);
-      Alert.alert('Succès', 'Workspace supprimé avec succès');
-      navigation.goBack();
+      queryClient.invalidateQueries(["workspace-boards", workspaceId]);
+      closeModal();
     },
-    onError: (error) => {
-      Alert.alert('Erreur', 'Impossible de supprimer le workspace');
-      console.error(error);
+  });
+
+  const deleteBoardMutation = useMutation({
+    mutationFn: async (id) => trelloClient.delete(BOARDS_ENDPOINTS.delete(id)),
+    onSuccess: () => {
+      queryClient.invalidateQueries(["workspace-boards", workspaceId]);
     },
   });
 
   const handleBoardPress = (board) => {
-    navigation.navigate('BoardDetail', {
+    navigation.navigate("BoardDetail", {
       boardId: board.id,
       boardName: board.name,
+      boardDescription: board.desc,
     });
   };
 
-  const handleUpdateWorkspace = async (id, updates) => {
-    await updateWorkspaceMutation.mutateAsync({ id, updates });
+  const openModal = (action, board = null) => {
+    setModalAction(action);
+    setSelectedBoard(board);
+    setModalName(board ? board.name : "");
+    setModalDesc(board ? board.desc : "");
+    setModalTemplate(board ? board.template : "kanban");
+    setModalVisible(true);
   };
 
-  const handleDeleteWorkspace = () => {
+  const closeModal = () => {
+    setModalVisible(false);
+    setModalName("");
+    setModalDesc("");
+    setModalTemplate("kanban");
+    setSelectedBoard(null);
+    setModalAction(null);
+  };
+
+  const validateModal = () => {
+    if (!modalName.trim()) return;
+
+    if (modalAction === "add") {
+      addBoardMutation.mutate({ name: modalName, desc: modalDesc, template: modalTemplate });
+    } else if (modalAction === "edit" && selectedBoard) {
+      updateBoardMutation.mutate({
+        id: selectedBoard.id,
+        name: modalName,
+        desc: modalDesc,
+        template: modalTemplate,
+      });
+    }
+  };
+
+  const handleDelete = (board) => {
     Alert.alert(
-      'Supprimer le workspace',
-      `Êtes-vous sûr de vouloir supprimer "${workspaceName}" ?`,
+      "Delete",
+      `Delete "${board.name}" ?`,
       [
-        { text: 'Annuler', style: 'cancel' },
+        { text: "Cancel", style: "cancel" },
         {
-          text: 'Supprimer',
-          style: 'destructive',
-          onPress: () => deleteWorkspaceMutation.mutate(workspaceId),
+          text: "Delete",
+          style: "destructive",
+          onPress: () => deleteBoardMutation.mutate(board.id),
         },
       ]
     );
   };
 
   const renderBoardItem = ({ item }) => (
-    <TouchableOpacity
-      style={styles.boardItem}
-      onPress={() => handleBoardPress(item)}
-    >
-      <View style={[styles.boardColor, { backgroundColor: item.prefs?.backgroundColor || '#0079BF' }]} />
-      <View style={styles.boardInfo}>
-        <Text style={styles.boardName}>{item.name}</Text>
-        <Text style={styles.boardDescription}>
-          {item.desc || 'Aucune description'}
-        </Text>
-        <Text style={styles.boardMeta}>
-          {item.closed ? 'Archivé' : 'Actif'} • Dernière activité: {new Date(item.dateLastActivity).toLocaleDateString()}
-        </Text>
-      </View>
-    </TouchableOpacity>
+    <View style={styles.boardItem}>
+      <TouchableOpacity
+        style={{ flex: 1, flexDirection: "row", alignItems: "center" }}
+        onPress={() => handleBoardPress(item)}
+        onLongPress={() => openModal("edit", item)}
+      >
+        <View
+          style={[
+            styles.boardColor,
+            { backgroundColor: item.prefs?.backgroundColor || "#0079BF" },
+          ]}
+        />
+        <View style={styles.boardInfo}>
+          <Text style={styles.boardName}>{item.name}</Text>
+          <Text style={styles.boardDescription}>{item.desc || "No description"}</Text>
+          <Text style={{ fontSize: 12, color: "#0079BF", marginTop: 2 }}>
+            Template: {item.template}
+          </Text>
+        </View>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.actionButton}
+        onPress={() => openModal("edit", item)}
+      >
+        <Text style={styles.actionButtonText}>Edit</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.actionButton}
+        onPress={() => handleDelete(item)}
+      >
+        <Text style={[styles.actionButtonText, { color: "red" }]}>Delete</Text>
+      </TouchableOpacity>
+    </View>
   );
 
-  if (isLoading) {
+  if (isLoading)
     return (
       <View style={styles.centerContainer}>
         <ActivityIndicator size="large" color="#0079BF" />
       </View>
     );
-  }
 
-  if (error) {
+  if (error)
     return (
       <View style={styles.centerContainer}>
-        <Text style={styles.errorText}>Erreur: {error.message}</Text>
+        <Text style={styles.errorText}>{String(error.message)}</Text>
       </View>
     );
-  }
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>{workspaceName}</Text>
         <Text style={styles.headerSubtitle}>
-          {boards?.length || 0} tableau(x)
+          {boards?.length || 0} board(s)
         </Text>
-
-        {/* Boutons d'action pour le workspace */}
-        <View style={styles.actionsContainer}>
-          <TouchableOpacity
-            style={[styles.actionButton, styles.editButton]}
-            onPress={() => setEditModalVisible(true)}
-          >
-            <Text style={styles.actionButtonText}>Modifier</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.actionButton, styles.deleteButton]}
-            onPress={handleDeleteWorkspace}
-          >
-            <Text style={styles.actionButtonText}>Supprimer</Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          style={styles.addButton}
+          onPress={() => openModal("add")}
+        >
+          <Text style={styles.addButtonText}>+ Add board</Text>
+        </TouchableOpacity>
       </View>
 
       <FlatList
@@ -156,106 +206,83 @@ const WorkspaceDetailScreen = ({ route, navigation }) => {
         contentContainerStyle={styles.listContainer}
       />
 
-      {/* Modal de modification */}
-      <WorkspaceFormModal
-        visible={editModalVisible}
-        onClose={() => setEditModalVisible(false)}
-        onUpdate={handleUpdateWorkspace}
-        workspace={workspace}
-      />
+      <Modal visible={modalVisible} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>
+              {modalAction === "add" ? "Create a board" : "Edit board"}
+            </Text>
+
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Board name"
+              value={modalName}
+              onChangeText={setModalName}
+            />
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Description"
+              value={modalDesc}
+              onChangeText={setModalDesc}
+            />
+
+            <Text style={{ marginBottom: 5 }}>Template</Text>
+            <View style={{ borderWidth: 1, borderColor: "#ccc", borderRadius: 6, marginBottom: 15 }}>
+              <Picker
+                selectedValue={modalTemplate}
+                onValueChange={(itemValue) => setModalTemplate(itemValue)}
+              >
+                <Picker.Item label="Kanban" value="kanban" />
+                <Picker.Item label="Scrum" value="scrum" />
+                <Picker.Item label="Basic" value="basic" />
+              </Picker>
+            </View>
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, { backgroundColor: "#bbb" }]}
+                onPress={closeModal}
+              >
+                <Text>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.modalButton, { backgroundColor: "#0079BF" }]}
+                onPress={validateModal}
+              >
+                <Text style={{ color: "#fff" }}>Save</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F4F5F7',
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  errorText: {
-    color: '#EB5A46',
-    fontSize: 16,
-  },
-  header: {
-    backgroundColor: '#fff',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#DFE1E6',
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#172B4D',
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    color: '#5E6C84',
-    marginTop: 4,
-  },
-  listContainer: {
-    padding: 16,
-  },
-  boardItem: {
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    marginBottom: 12,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  boardColor: {
-    height: 4,
-    width: '100%',
-  },
-  boardInfo: {
-    padding: 16,
-  },
-  boardName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#172B4D',
-    marginBottom: 8,
-  },
-  boardDescription: {
-    fontSize: 14,
-    color: '#5E6C84',
-    marginBottom: 8,
-    lineHeight: 18,
-  },
-  boardMeta: {
-    fontSize: 12,
-    color: '#8993A4',
-  },
-  actionsContainer: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 12,
-  },
-  actionButton: {
-    flex: 1,
-    padding: 10,
-    borderRadius: 6,
-    alignItems: 'center',
-  },
-  editButton: {
-    backgroundColor: '#0079BF',
-  },
-  deleteButton: {
-    backgroundColor: '#EB5A46',
-  },
-  actionButtonText: {
-    color: '#fff',
-    fontSize: 13,
-    fontWeight: '600',
-  },
+  container: { flex: 1, padding: 16 },
+  header: { paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: "#ccc" },
+  headerTitle: { fontSize: 24, fontWeight: "bold" },
+  headerSubtitle: { fontSize: 14, color: "#666", marginBottom: 12 },
+  addButton: { padding: 10, backgroundColor: "#0079BF", borderRadius: 8, marginTop: 10 },
+  addButtonText: { color: "white", textAlign: "center", fontWeight: "bold" },
+  listContainer: { paddingVertical: 16 },
+  boardItem: { flexDirection: "row", alignItems: "center", backgroundColor: "#f2f2f2", padding: 16, borderRadius: 8, marginBottom: 10 },
+  boardColor: { width: 12, height: 60, borderRadius: 4, marginRight: 12 },
+  boardInfo: { flex: 1 },
+  boardName: { fontSize: 18, fontWeight: "bold" },
+  boardDescription: { color: "#555", marginTop: 4 },
+  actionButton: { marginLeft: 8 },
+  actionButtonText: { fontSize: 12 },
+  centerContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
+  errorText: { color: "red" },
+  modalOverlay: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "rgba(0,0,0,0.5)" },
+  modalContent: { backgroundColor: "#fff", padding: 20, width: "80%", borderRadius: 10 },
+  modalTitle: { fontSize: 18, fontWeight: "bold", marginBottom: 10 },
+  modalInput: { borderWidth: 1, borderColor: "#ccc", padding: 10, borderRadius: 6, marginBottom: 15 },
+  modalButtons: { flexDirection: "row", justifyContent: "space-between" },
+  modalButton: { padding: 10, width: "45%", borderRadius: 6, alignItems: "center" },
 });
 
 export default WorkspaceDetailScreen;

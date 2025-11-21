@@ -1,11 +1,9 @@
 import trelloClient from '../../../api/trello/client';
 
-/**
- * Service pour g�rer les workspaces (Organizations)
- */
+
 const workspaceService = {
   /**
-   * R�cup�rer tous les workspaces de l'utilisateur
+   *get all workspace for the user
    */
   getWorkspaces: async () => {
     try {
@@ -22,7 +20,7 @@ const workspaceService = {
   },
 
   /**
-   * R�cup�rer un workspace par son ID
+   * Get a workspace
    */
   getWorkspaceById: async (workspaceId) => {
     try {
@@ -39,7 +37,7 @@ const workspaceService = {
   },
 
   /**
-   * R�cup�rer les boards d'un workspace
+   * get boards from a workspace
    */
   getWorkspaceBoards: async (workspaceId) => {
     try {
@@ -57,41 +55,54 @@ const workspaceService = {
   },
 
   /**
-   * Créer un nouveau workspace
-   * Note: Nécessite des permissions spéciales
+   * create a workspace
    */
+
   createWorkspace: async (displayName, desc = '') => {
     try {
-      const response = await trelloClient.post('/organizations', null, {
-        params: {
-          displayName,
-          desc,
-        },
+      const payload = new URLSearchParams();
+      payload.append('displayName', displayName);
+      payload.append('desc', desc);
+  
+      const response = await trelloClient.post('/organizations', payload.toString(), {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       });
+  
       return response.data;
     } catch (error) {
       console.error('Error creating workspace:', error);
       throw error;
     }
   },
+  
 
   /**
-   * Mettre à jour un workspace
+   * update a workspace
    */
+
   updateWorkspace: async (workspaceId, updates) => {
     try {
-      const response = await trelloClient.put(`/organizations/${workspaceId}`, null, {
-        params: updates,
-      });
+      const payload = new URLSearchParams();
+  
+      if (updates.displayName) payload.append('displayName', updates.displayName);
+      if (updates.desc) payload.append('desc', updates.desc);
+  
+      const response = await trelloClient.put(
+        `/organizations/${workspaceId}`,
+        payload.toString(),
+        { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+      );
+  
       return response.data;
     } catch (error) {
       console.error('Error updating workspace:', error);
       throw error;
     }
   },
+  
 
   /**
-   * Supprimer un workspace
+   * delete a workspace
    */
   deleteWorkspace: async (workspaceId) => {
     try {

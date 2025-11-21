@@ -9,7 +9,7 @@ setupInterceptors();
 export const useAuthStore = create(
   persist(
     (set, get) => ({
-      // État
+      // State
       token: null,
       isAuthenticated: false,
       isLoading: true,
@@ -43,7 +43,7 @@ export const useAuthStore = create(
     }),
     {
       name: 'trelltech-auth-storage',
-      version: 2, // version pour migration future
+      version: 2, // version for future migration
 
 
 
@@ -83,7 +83,7 @@ migrate: (persistedState) => {
 );
 
 /**
- * Helpers pour les intercepteurs
+ * Helpers for interceptors
  */
 export const getAuthToken = () => useAuthStore.getState().token;
 export const clearAuthToken = () => useAuthStore.getState().clearAuth();

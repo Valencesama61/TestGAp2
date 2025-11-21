@@ -7,8 +7,7 @@ export const TRELLO_TOKEN_EXPIRATION = '30days';
 export const TRELLO_AUTH_URL = `https://trello.com/1/authorize?expiration=${TRELLO_TOKEN_EXPIRATION}&name=TrellTech&scope=${TRELLO_TOKEN_SCOPES}&response_type=token&key=${TRELLO_API_KEY}`;
 
 // URL d'authentification avec return_url pour expo-auth-session
-// Pour utiliser ceci, vous devez ajouter cette URL dans les "Allowed origins" de votre application Trello
-// sur https://trello.com/app-key
+
 export const getTrelloAuthUrlWithCallback = (redirectUri) => {
   return `https://trello.com/1/authorize?expiration=${TRELLO_TOKEN_EXPIRATION}&name=TrellTech&scope=${TRELLO_TOKEN_SCOPES}&response_type=token&key=${TRELLO_API_KEY}&return_url=${encodeURIComponent(redirectUri)}`;
 };

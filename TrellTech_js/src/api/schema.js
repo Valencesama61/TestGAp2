@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 
 /**
- * Schema pour un Workspace (Organization)
+ * Workspace (Organization) schema
  */
 export const WorkspaceSchema = PropTypes.shape({
   id: PropTypes.string.isRequired,
@@ -16,7 +16,7 @@ export const WorkspaceSchema = PropTypes.shape({
 });
 
 /**
- * Schema pour un Board
+ * Board schema
  */ 
 export const BoardSchema = PropTypes.shape({
   id: PropTypes.string.isRequired,
@@ -35,7 +35,7 @@ export const BoardSchema = PropTypes.shape({
 });
 
 /**
- * Schema pour une List
+ * List schema
  */
 export const ListSchema = PropTypes.shape({
   id: PropTypes.string.isRequired,
@@ -48,7 +48,7 @@ export const ListSchema = PropTypes.shape({
 });
 
 /**
- * Schema pour une Card
+ * Card schema
  */
 export const CardSchema = PropTypes.shape({
   id: PropTypes.string.isRequired,
@@ -72,7 +72,7 @@ export const CardSchema = PropTypes.shape({
 
 /**
  *
- * Scheme pour un Label 
+ * Label schema
  */
 export const LabelSchema = PropTypes.shape({
     id: PropTypes.string.isRequired,
@@ -81,7 +81,7 @@ export const LabelSchema = PropTypes.shape({
 });
 
 /**
- * Schema pour un Member
+ * Member schema
  */
 export const MemberSchema = PropTypes.shape({
   id: PropTypes.string.isRequired,

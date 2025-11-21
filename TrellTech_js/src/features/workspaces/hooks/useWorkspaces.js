@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import workspaceService from '../services/workspaceService';
 
 /**
- * Hook pour récupérer tous les workspaces
+ * Hook to get all workspaces
  */
 export const useWorkspaces = () => {
   return useQuery({
@@ -13,7 +13,7 @@ export const useWorkspaces = () => {
 };
 
 /**
- * Hook pour récupérer un workspace spécifique
+ * Hook to get a workspace
  */
 export const useWorkspace = (workspaceId) => {
   return useQuery({
@@ -24,7 +24,7 @@ export const useWorkspace = (workspaceId) => {
 };
 
 /**
- * Hook pour récupérer les boards d'un workspace
+ * Hook to get boards for a workspace
  */
 export const useWorkspaceBoards = (workspaceId) => {
   return useQuery({

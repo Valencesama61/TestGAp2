@@ -2,9 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import workspaceService from '../services/workspaceService';
 
 /**
- * Hook pour créer un workspace
- * Note: La création de workspaces (organizations) nécessite généralement
- * des permissions spéciales dans Trello
+ * Hook to create a workspace
  */
 export const useCreateWorkspace = () => {
   const queryClient = useQueryClient();
@@ -22,7 +20,7 @@ export const useCreateWorkspace = () => {
 };
 
 /**
- * Hook pour mettre à jour un workspace
+ * Hook to update a workspace
  */
 export const useUpdateWorkspace = () => {
   const queryClient = useQueryClient();
@@ -41,8 +39,7 @@ export const useUpdateWorkspace = () => {
 };
 
 /**
- * Hook pour supprimer un workspace
- * Note: Nécessite des permissions d'administrateur
+ * Hook to delete a workspace
  */
 export const useDeleteWorkspace = () => {
   const queryClient = useQueryClient();

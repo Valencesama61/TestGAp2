@@ -19,7 +19,7 @@ export default function AppNavigator() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const isLoading = useAuthStore((state) => state.isLoading);
 
-  // Afficher un loader pendant l'initialisation
+  // Display a loader while initialisation
   if (showLoading) {
     return <LoadingScreen onFinish={() => setShowLoading(false)} />;
   }
@@ -36,10 +36,10 @@ export default function AppNavigator() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       {!isAuthenticated ? (
-        // Stack d'authentification
+        // Authentification stack
         <Stack.Screen name="Login" component={LoginScreen} />
       ) : (
-        // Stack principal de l'application
+        // App main stack
         <Stack.Screen name="Main" component={MainTabNavigator} />
       )}
     </Stack.Navigator>

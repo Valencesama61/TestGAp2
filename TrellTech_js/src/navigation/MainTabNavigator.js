@@ -35,12 +35,12 @@ function WorkspaceStackNavigator() {
       <WorkspaceStack.Screen
         name="WorkspaceDetail"
         component={WorkspaceDetailScreen}
-        options={{ title: 'Détails Workspace' }}
+        options={{ title: 'Workspace details' }}
       />
       <WorkspaceStack.Screen
         name="BoardDetail"
         component={BoardDetailScreen}
-        options={{ title: 'Détails Board' }}
+        options={{ title: 'Board detail' }}
       />
       <WorkspaceStack.Screen
         name="CardsList"
@@ -68,17 +68,17 @@ function BoardStackNavigator() {
       <BoardStack.Screen
         name="BoardDetail"
         component={BoardDetailScreen}
-        options={{ title: 'Détails Board' }}
+        options={{ title: 'Board detail' }}
       />
       <BoardStack.Screen
         name="CardsList"
         component={CardsListScreen}
-        options={{ title: 'Cartes' }}
+        options={{ title: 'Cards' }}
       />
       <BoardStack.Screen
         name="CardDetail"
         component={CardDetailScreen}
-        options={{ title: 'Détails Carte' }}
+        options={{ title: 'Card details' }}
       />
     </BoardStack.Navigator>
   );
@@ -91,7 +91,7 @@ function ProfileStackNavigator() {
       <ProfileStack.Screen
         name="ProfileMain"
         component={ProfileScreen}
-        options={{ title: 'Profil' }}
+        options={{ title: 'Profile' }}
       />
     </ProfileStack.Navigator>
   );
@@ -133,7 +133,7 @@ export default function MainTabNavigator() {
       <Tab.Screen
         name="ProfileTab"
         component={ProfileStackNavigator}
-        options={{ title: 'Profil' }}
+        options={{ title: 'Profile' }}
       />
     </Tab.Navigator>
   );
