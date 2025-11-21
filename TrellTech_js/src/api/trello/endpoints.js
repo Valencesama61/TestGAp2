@@ -50,15 +50,17 @@ export const BOARDS_ENDPOINTS = {
  */
 export const LISTS_ENDPOINTS = {
   getById: (id) => `/lists/${id}`,
-  
+
   create: '/lists',
-  
+
   update: (id) => `/lists/${id}`,
-  
+
+  delete: (id) => `/lists/${id}`,
+
   archive: (id) => `/lists/${id}/closed`,
-  
+
   getCards: (id) => `/lists/${id}/cards`,
-  
+
   moveAllCards: (id) => `/lists/${id}/moveAllCards`,
 };
 

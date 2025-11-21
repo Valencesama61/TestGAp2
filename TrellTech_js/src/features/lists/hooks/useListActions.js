@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import listService from '../services/listService';
 
 /**
- * Hook pour créer une liste
+ * Hook pour crï¿½er une liste
  */
 export const useCreateList = () => {
   const queryClient = useQueryClient();
@@ -19,7 +19,7 @@ export const useCreateList = () => {
 };
 
 /**
- * Hook pour mettre à jour une liste
+ * Hook pour mettre ï¿½ jour une liste
  */
 export const useUpdateList = () => {
   const queryClient = useQueryClient();
@@ -32,6 +32,24 @@ export const useUpdateList = () => {
     },
     onError: (error) => {
       console.error('List update error:', error);
+    },
+  });
+};
+
+/**
+ * Hook pour supprimer une liste
+ */
+export const useDeleteList = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ listId, boardId }) => listService.deleteList(listId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries(['list', variables.listId]);
+      queryClient.invalidateQueries(['board-lists', variables.boardId]);
+    },
+    onError: (error) => {
+      console.error('List deletion error:', error);
     },
   });
 };
@@ -55,7 +73,7 @@ export const useArchiveList = () => {
 };
 
 /**
- * Hook pour déplacer toutes les cartes d'une liste
+ * Hook pour dï¿½placer toutes les cartes d'une liste
  */
 export const useMoveAllCards = () => {
   const queryClient = useQueryClient();

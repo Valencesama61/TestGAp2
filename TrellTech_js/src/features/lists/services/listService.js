@@ -1,4 +1,5 @@
 import trelloClient from '../../../api/trello/client';
+import { LISTS_ENDPOINTS } from '../../../api/trello/endpoints';
 
 /**
  * Service pour gérer les listes
@@ -9,7 +10,7 @@ const listService = {
    */
   getListById: async (listId) => {
     try {
-      const response = await trelloClient.get(`/lists/${listId}`, {
+      const response = await trelloClient.get(LISTS_ENDPOINTS.getById(listId), {
         params: {
           fields: 'all',
         },
@@ -26,7 +27,7 @@ const listService = {
    */
   getListCards: async (listId) => {
     try {
-      const response = await trelloClient.get(`/lists/${listId}/cards`, {
+      const response = await trelloClient.get(LISTS_ENDPOINTS.getCards(listId), {
         params: {
           fields: 'id,name,desc,due,dueComplete,labels',
         },
@@ -43,7 +44,7 @@ const listService = {
    */
   createList: async (boardId, name) => {
     try {
-      const response = await trelloClient.post('/lists', null, {
+      const response = await trelloClient.post(LISTS_ENDPOINTS.create, null, {
         params: {
           name,
           idBoard: boardId,
@@ -62,7 +63,7 @@ const listService = {
    */
   updateList: async (listId, name) => {
     try {
-      const response = await trelloClient.put(`/lists/${listId}`, null, {
+      const response = await trelloClient.put(LISTS_ENDPOINTS.update(listId), null, {
         params: { name },
       });
       return response.data;
@@ -73,11 +74,23 @@ const listService = {
   },
 
   /**
+   * Supprimer une liste
+   */
+  deleteList: async (listId) => {
+    try {
+      await trelloClient.delete(LISTS_ENDPOINTS.delete(listId));
+    } catch (error) {
+      console.error('Error deleting list:', error);
+      throw error;
+    }
+  },
+
+  /**
    * Archiver une liste
    */
   archiveList: async (listId) => {
     try {
-      const response = await trelloClient.put(`/lists/${listId}/closed`, null, {
+      const response = await trelloClient.put(LISTS_ENDPOINTS.archive(listId), null, {
         params: { value: true },
       });
       return response.data;
@@ -93,7 +106,7 @@ const listService = {
   moveAllCards: async (sourceListId, targetListId) => {
     try {
       const response = await trelloClient.post(
-        `/lists/${sourceListId}/moveAllCards`,
+        LISTS_ENDPOINTS.moveAllCards(sourceListId),
         null,
         {
           params: {
