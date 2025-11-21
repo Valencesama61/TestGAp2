@@ -1,37 +1,40 @@
+// hooks/useListActions.js
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import listService from '../services/listService';
 
 /**
- * Hook pour créer une liste
+ * Hook pour crÃ©er une liste
  */
 export const useCreateList = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({ boardId, name }) => listService.createList(boardId, name),
-    onSuccess: (newList) => {
-      queryClient.invalidateQueries(['board-lists', newList.idBoard]);
+    onSuccess: (data, variables) => {
+      // Invalider et refetch les listes du board
+      queryClient.invalidateQueries(['board-lists', variables.boardId]);
     },
     onError: (error) => {
-      console.error('List creation error:', error);
+      console.error('Error creating list:', error);
     },
   });
 };
 
 /**
- * Hook pour mettre à jour une liste
+ * Hook pour mettre Ã  jour une liste
  */
 export const useUpdateList = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({ listId, name }) => listService.updateList(listId, name),
-    onSuccess: (updatedList) => {
-      queryClient.invalidateQueries(['list', updatedList.id]);
-      queryClient.invalidateQueries(['board-lists', updatedList.idBoard]);
+    onSuccess: (data) => {
+      // Invalider la liste spÃ©cifique et les listes du board
+      queryClient.invalidateQueries(['list', data.id]);
+      queryClient.invalidateQueries(['board-lists', data.idBoard]);
     },
     onError: (error) => {
-      console.error('List update error:', error);
+      console.error('Error updating list:', error);
     },
   });
 };
@@ -44,32 +47,30 @@ export const useArchiveList = () => {
 
   return useMutation({
     mutationFn: ({ listId, boardId }) => listService.archiveList(listId),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries(['list', variables.listId]);
+    onSuccess: (data, variables) => {
+      // Invalider les listes du board
       queryClient.invalidateQueries(['board-lists', variables.boardId]);
     },
     onError: (error) => {
-      console.error('List archiving error:', error);
+      console.error('Error archiving list:', error);
     },
   });
 };
 
 /**
- * Hook pour déplacer toutes les cartes d'une liste
+ * Hook pour supprimer une liste (via archivage)
  */
-export const useMoveAllCards = () => {
+export const useDeleteList = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ sourceListId, targetListId, boardId }) =>
-      listService.moveAllCards(sourceListId, targetListId),
-    onSuccess: (_, variables) => {
+    mutationFn: ({ listId, boardId }) => listService.archiveList(listId),
+    onSuccess: (data, variables) => {
+      // Invalider les listes du board
       queryClient.invalidateQueries(['board-lists', variables.boardId]);
-      queryClient.invalidateQueries(['cards', variables.sourceListId]);
-      queryClient.invalidateQueries(['cards', variables.targetListId]);
     },
     onError: (error) => {
-      console.error('Move all cards error:', error);
+      console.error('Error deleting list:', error);
     },
   });
 };

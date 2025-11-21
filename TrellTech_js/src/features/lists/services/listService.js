@@ -1,8 +1,6 @@
+// listService.js - CORRECTION
 import trelloClient from '../../../api/trello/client';
 
-/**
- * Service pour gérer les listes
- */
 const listService = {
   /**
    * Récupérer une liste par son ID
@@ -11,7 +9,7 @@ const listService = {
     try {
       const response = await trelloClient.get(`/lists/${listId}`, {
         params: {
-          fields: 'all',
+          fields: 'id,name,closed,idBoard,pos',
         },
       });
       return response.data;
@@ -28,7 +26,7 @@ const listService = {
     try {
       const response = await trelloClient.get(`/lists/${listId}/cards`, {
         params: {
-          fields: 'id,name,desc,due,dueComplete,labels',
+          fields: 'id,name,desc,due,dueComplete,labels,idMembers,idList,idBoard',
         },
       });
       return response.data;
@@ -39,16 +37,17 @@ const listService = {
   },
 
   /**
-   * Créer une nouvelle liste
+   * Créer une nouvelle liste - CORRECTION
    */
   createList: async (boardId, name) => {
     try {
-      const response = await trelloClient.post('/lists', null, {
-        params: {
-          name,
-          idBoard: boardId,
-          pos: 'bottom',
-        },
+      const payload = new URLSearchParams();
+      payload.append('name', name);
+      payload.append('idBoard', boardId);
+      payload.append('pos', 'bottom');
+
+      const response = await trelloClient.post('/lists', payload.toString(), {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       });
       return response.data;
     } catch (error) {
@@ -58,12 +57,15 @@ const listService = {
   },
 
   /**
-   * Mettre à jour une liste
+   * Mettre à jour une liste - CORRECTION
    */
   updateList: async (listId, name) => {
     try {
-      const response = await trelloClient.put(`/lists/${listId}`, null, {
-        params: { name },
+      const payload = new URLSearchParams();
+      payload.append('name', name);
+
+      const response = await trelloClient.put(`/lists/${listId}`, payload.toString(), {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       });
       return response.data;
     } catch (error) {
@@ -73,12 +75,15 @@ const listService = {
   },
 
   /**
-   * Archiver une liste
+   * Archiver une liste - CORRECTION
    */
   archiveList: async (listId) => {
     try {
-      const response = await trelloClient.put(`/lists/${listId}/closed`, null, {
-        params: { value: true },
+      const payload = new URLSearchParams();
+      payload.append('value', 'true');
+
+      const response = await trelloClient.put(`/lists/${listId}/closed`, payload.toString(), {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       });
       return response.data;
     } catch (error) {
@@ -88,18 +93,19 @@ const listService = {
   },
 
   /**
-   * Déplacer toutes les cartes d'une liste vers une autre
+   * Déplacer toutes les cartes d'une liste vers une autre - CORRECTION
    */
-  moveAllCards: async (sourceListId, targetListId) => {
+  moveAllCards: async (sourceListId, targetListId, idBoard) => {
     try {
+      const payload = new URLSearchParams();
+      payload.append('idBoard', idBoard);
+      payload.append('idList', targetListId);
+
       const response = await trelloClient.post(
         `/lists/${sourceListId}/moveAllCards`,
-        null,
+        payload.toString(),
         {
-          params: {
-            idBoard: targetListId,
-            idList: targetListId,
-          },
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         }
       );
       return response.data;

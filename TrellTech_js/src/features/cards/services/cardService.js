@@ -5,6 +5,57 @@ import { CARDS_ENDPOINTS } from '../../../api/trello/endpoints';
  * Service pour gérer les cartes (Cards)
  */
 const cardService = {
+
+  /**
+   * Assigner un membre à une carte
+   */
+  addMemberToCard: async (cardId, memberId) => {
+  try {
+    console.log('Assignation du membre (alternative):', { cardId, memberId });
+    
+    const payload = new URLSearchParams();
+    payload.append('value', memberId);
+
+    const response = await trelloClient.post(`${CARDS_ENDPOINTS.addMember(cardId)}?${payload.toString()}`,{
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+    });
+    console.log(' Membre assigné avec succès (alternative)');
+    return response.data;
+  } catch (error) {
+    console.error(' Error adding member to card (alternative):', error);
+    console.error('Détails:', error.response?.data);
+    throw error;
+  }
+},
+
+  /**
+   * Retirer un membre d'une carte 
+   */
+  removeMemberFromCard: async (cardId, memberId) => {
+    try {
+      await trelloClient.delete(CARDS_ENDPOINTS.removeMember(cardId, memberId));
+    } catch (error) {
+      console.error('Error removing member from card:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Récupérer les membres d'une carte
+   */
+  getCardMembers: async (cardId) => {
+    try {
+      const response = await trelloClient.get(CARDS_ENDPOINTS.getMembers(cardId), {
+        params: {
+          fields: 'id,fullName,username,avatarUrl,initials',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error retrieving card members:', error);
+      throw error;
+    }
+  },
   /**
    * Récupérer toutes les cartes d'une liste
    * @param {string} listId - ID de la liste
@@ -20,6 +71,23 @@ const cardService = {
     }
   },
 
+  /**
+   * Récupérer tous les membres disponibles du board
+   */
+  getBoardMembers: async (boardId) => {
+    try {
+      const response = await trelloClient.get(`/boards/${boardId}/members`, {
+        params: {
+          fields: 'id,fullName,username,avatarUrl,initials',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error retrieving board members:', error);
+      throw error;
+    }
+  },
+  
   /**
    * Récupérer une carte par son ID
    * @param {string} cardId - ID de la carte
@@ -53,22 +121,23 @@ const cardService = {
    * @returns {Promise<Object>} Carte créée
    */
   createCard: async (cardData) => {
-    try {
-      const response = await trelloClient.post(CARDS_ENDPOINTS.create, null, {
-        params: {
-          name: cardData.name,
-          idList: cardData.idList,
-          desc: cardData.desc || '',
-          pos: cardData.pos || 'bottom',
-          due: cardData.due || null,
-        },
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Error creating map:', error);
-      throw error;
-    }
-  },
+  try {
+    const payload = new URLSearchParams();
+    payload.append('name', cardData.name);
+    payload.append('idList', cardData.idList);
+    if (cardData.desc) payload.append('desc', cardData.desc);
+    if (cardData.pos) payload.append('pos', cardData.pos);
+    if (cardData.due) payload.append('due', cardData.due);
+
+    const response = await trelloClient.post(CARDS_ENDPOINTS.create, payload.toString(), {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error creating card:', error); // Correction du message
+    throw error;
+  }
+},
 
   /**
    * Mettre à jour une carte
@@ -77,18 +146,27 @@ const cardService = {
    * @returns {Promise<Object>} Carte mise à jour
    */
   updateCard: async (cardId, updates) => {
-    try {
-      const response = await trelloClient.put(
-        CARDS_ENDPOINTS.update(cardId),
-        null,
-        { params: updates }
-      );
-      return response.data;
-    } catch (error) {
-      console.error('Error updating map:', error);
-      throw error;
-    }
-  },
+  try {
+    const payload = new URLSearchParams();
+    Object.keys(updates).forEach(key => {
+      if (updates[key] !== undefined && updates[key] !== null) {
+        payload.append(key, updates[key]);
+      }
+    });
+
+    const response = await trelloClient.put(
+      CARDS_ENDPOINTS.update(cardId),
+      payload.toString(),
+      { 
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' } 
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Error updating card:', error); // Correction du message
+    throw error;
+  }
+},
 
   /**
    * Supprimer une carte

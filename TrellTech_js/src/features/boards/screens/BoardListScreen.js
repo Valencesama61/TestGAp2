@@ -41,7 +41,7 @@ const BoardListScreen = ({ navigation }) => {
       </View>
       <View style={styles.boardContent}>
         <Text style={styles.boardDescription} numberOfLines={2}>
-          {item.desc || 'Aucune description'}
+          {item.desc || 'Any description'}
         </Text>
         <View style={styles.boardFooter}>
           <Text style={styles.boardDate}>
@@ -63,7 +63,7 @@ const BoardListScreen = ({ navigation }) => {
   if (error) {
     return (
       <View style={styles.centerContainer}>
-        <Text style={styles.errorText}>Erreur: {error.message}</Text>
+        <Text style={styles.errorText}>Error: {error.message}</Text>
       </View>
     );
   }
@@ -71,9 +71,9 @@ const BoardListScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Tableaux</Text>
+        <Text style={styles.headerTitle}>Boards</Text>
         <Text style={styles.headerSubtitle}>
-          {boards?.length || 0} tableau(x) actif(s)
+          {boards?.length || 0} board(s) actif(s)
         </Text>
       </View>
 

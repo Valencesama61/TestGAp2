@@ -13,7 +13,8 @@ import CreateCardModal from '../components/CreateCardModal';
 
 const CardsListScreen = ({ route, navigation }) => {
   const listId = route?.params?.listId || 'default-list';
-  const listName = route?.params?.listName || 'Ma Liste';
+  const listName = route?.params?.listName || 'My List';
+
 
   // State pour le modal
   const [modalVisible, setModalVisible] = useState(false);
@@ -22,6 +23,15 @@ const CardsListScreen = ({ route, navigation }) => {
   const { data: cards, isLoading, error, refetch } = useCards(listId);
   const createCardMutation = useCreateCard();
   const deleteCardMutation = useDeleteCard();
+
+
+  if (!listId) {
+    return (
+      <View style={styles.centerContainer}>
+        <Text style={styles.errorText}>Error: No list selected</Text>
+      </View>
+    );
+  }
 
   /**
    * Gérer le clic sur une carte
@@ -38,8 +48,8 @@ const CardsListScreen = ({ route, navigation }) => {
    */
   const handleCardLongPress = (card) => {
     Alert.alert(
-      'Supprimer la carte',
-      `Êtes-vous sûr de vouloir supprimer "${card.name}" ?`,
+      'Delete Card',
+      `Are you sure you want to delete "${card.name}" ?`,
       [
         { text: 'Annuler', style: 'cancel' },
         {
@@ -57,9 +67,9 @@ const CardsListScreen = ({ route, navigation }) => {
   const handleDeleteCard = async (cardId) => {
     try {
       await deleteCardMutation.mutateAsync({ cardId, listId });
-      Alert.alert('Succès', 'Carte supprimée avec succès');
+      Alert.alert('Success', 'Card successfully deleted');
     } catch (error) {
-      Alert.alert('Erreur', 'Impossible de supprimer la carte');
+      Alert.alert('Error', 'Unable to delete the map');
     }
   };
 
@@ -68,21 +78,27 @@ const CardsListScreen = ({ route, navigation }) => {
    */
   const handleCreateCard = async (cardData) => {
     try {
-      await createCardMutation.mutateAsync(cardData);
-      Alert.alert('Succès', 'Carte créée avec succès');
+      // S'assurer que idList est inclus
+      const completeCardData = {
+        ...cardData,
+        idList: listId,
+      };
+      
+      await createCardMutation.mutateAsync(completeCardData);
+      setModalVisible(false);
+      Alert.alert('Success', 'Card created successfully');
     } catch (error) {
-      Alert.alert('Erreur', 'Impossible de créer la carte');
-      throw error;
+      console.error('Card creation error:', error);
+      Alert.alert('Error', 'Unable to create map: ' + error.message);
     }
   };
-
   return (
     <View style={styles.container}>
       {/* Header avec le nom de la liste */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>{listName}</Text>
         <Text style={styles.headerSubtitle}>
-          {cards?.length || 0} carte(s)
+          {cards?.length || 0} card(s)
         </Text>
       </View>
 

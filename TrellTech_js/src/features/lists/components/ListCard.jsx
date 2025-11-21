@@ -1,158 +1,88 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import PropTypes from 'prop-types';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, Button, FlatList, Alert, StyleSheet } from 'react-native';
+import { getLists, createList, updateList, archiveList } from '../services/listService';
 
-const ListCard = ({ list, onPress, onLongPress, onEdit, onArchive }) => {
-  const cardCount = list.cards?.length || 0;
+const ListCRUD = ({ boardId }) => {
+  const [lists, setLists] = useState([]);
+  const [newName, setNewName] = useState('');
+
+  const fetchLists = async () => {
+    try {
+      const res = await getLists(boardId);
+      setLists(res.data);
+    } catch (e) {
+      console.log(e);
+    }
+  };
+
+  useEffect(() => { fetchLists(); }, [boardId]);
+
+  const handleCreate = async () => {
+    if (!newName) return;
+    await createList(boardId, newName);
+    setNewName('');
+    fetchLists();
+  };
+
+  const handleUpdate = (id, currentName) => {
+    Alert.prompt(
+      'Modifier le nom',
+      '',
+      async (text) => {
+        if (text) {
+          await updateList(id, text);
+          fetchLists();
+        }
+      },
+      'plain-text',
+      currentName
+    );
+  };
+
+  const handleArchive = async (id) => {
+    Alert.alert(
+      'Archiver la liste ?',
+      '',
+      [
+        { text: 'Annuler' },
+        { text: 'Oui', onPress: async () => { await archiveList(id); fetchLists(); } }
+      ]
+    );
+  };
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity
-        style={styles.mainContent}
-        onPress={() => onPress(list)}
-        onLongPress={() => onLongPress && onLongPress(list)}
-        activeOpacity={0.7}
-      >
-        {/* Header avec le nom de la liste */}
-        <View style={styles.header}>
-          <Text style={styles.listName} numberOfLines={1}>
-            {list.name}
-          </Text>
-          <View style={styles.cardCountBadge}>
-            <Text style={styles.cardCountText}>{cardCount}</Text>
-          </View>
-        </View>
-
-        {/* Indicateur de position */}
-        {list.pos !== undefined && (
-          <Text style={styles.positionText}>Position: {list.pos}</Text>
-        )}
-
-        {/* État fermé/archivé */}
-        {list.closed && (
-          <View style={styles.closedBadge}>
-            <Text style={styles.closedText}>Archivée</Text>
+      <Text style={styles.title}>Listes Trello</Text>
+      <TextInput
+        style={styles.input}
+        value={newName}
+        onChangeText={setNewName}
+        placeholder="Nouvelle liste"
+      />
+      <Button title="Créer" onPress={handleCreate} />
+      <FlatList
+        data={lists}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <View style={styles.listItem}>
+            <Text>{item.name}</Text>
+            <View style={styles.buttons}>
+              <Button title="Éditer" onPress={() => handleUpdate(item.id, item.name)} />
+              <Button title="Archiver" onPress={() => handleArchive(item.id)} />
+            </View>
           </View>
         )}
-      </TouchableOpacity>
-
-      {/* Actions */}
-      <View style={styles.actionsContainer}>
-        {onEdit && (
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={() => onEdit(list)}
-          >
-            <Text style={styles.actionButtonText}>Modifier</Text>
-          </TouchableOpacity>
-        )}
-
-        {onArchive && !list.closed && (
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={() => onArchive(list)}
-          >
-            <Text style={[styles.actionButtonText, styles.archiveText]}>
-              Archiver
-            </Text>
-          </TouchableOpacity>
-        )}
-      </View>
+      />
     </View>
   );
 };
 
-ListCard.propTypes = {
-  list: PropTypes.shape({
-    id: PropTypes.string.isRequired,
-    name: PropTypes.string.isRequired,
-    closed: PropTypes.bool,
-    pos: PropTypes.number,
-    cards: PropTypes.array,
-  }).isRequired,
-  onPress: PropTypes.func.isRequired,
-  onLongPress: PropTypes.func,
-  onEdit: PropTypes.func,
-  onArchive: PropTypes.func,
-};
-
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-    overflow: 'hidden',
-  },
-  mainContent: {
-    padding: 12,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  listName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#172B4D',
-    flex: 1,
-    marginRight: 8,
-  },
-  cardCountBadge: {
-    backgroundColor: '#F4F5F7',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  cardCountText: {
-    fontSize: 12,
-    color: '#5E6C84',
-    fontWeight: '600',
-  },
-  positionText: {
-    fontSize: 11,
-    color: '#8993A4',
-    marginTop: 4,
-  },
-  closedBadge: {
-    marginTop: 8,
-    backgroundColor: '#FFF3CD',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-    alignSelf: 'flex-start',
-  },
-  closedText: {
-    fontSize: 11,
-    color: '#856404',
-    fontWeight: '600',
-  },
-  actionsContainer: {
-    flexDirection: 'row',
-    borderTopWidth: 1,
-    borderTopColor: '#F4F5F7',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    gap: 12,
-  },
-  actionButton: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-  },
-  actionButtonText: {
-    fontSize: 13,
-    color: '#0079BF',
-    fontWeight: '600',
-  },
-  archiveText: {
-    color: '#EB5A46',
-  },
+  container: { padding: 20 },
+  title: { fontSize: 20, marginBottom: 10 },
+  input: { borderWidth: 1, marginBottom: 10, padding: 5 },
+  listItem: { flexDirection: 'row', justifyContent: 'space-between', marginVertical: 5 },
+  buttons: { flexDirection: 'row', gap: 5 }
 });
 
-export default ListCard;
+export default ListCRUD;

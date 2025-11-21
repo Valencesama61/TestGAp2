@@ -10,65 +10,61 @@ import {
   Modal,
   TextInput,
 } from 'react-native';
-import { useBoardLists } from '../hooks/useBoards';
-import { useCreateList, useUpdateList, useDeleteList } from '../../lists/hooks/useListActions';
+import { useBoardLists } from '../hooks/useBoard';
+import { useCreateList, useUpdateList, useDeleteList } from '../hooks/useListActions';
 
-const BoardDetailScreen = ({ route, navigation }) => {
+const ListListScreen = ({ route, navigation }) => {
   const { boardId, boardName } = route.params;
   
   // Fetch des listes du board
   const { data: lists, isLoading, error } = useBoardLists(boardId);
   
-  // Mutations pour les listes
+  // Mutations
   const createList = useCreateList();
   const updateList = useUpdateList();
   const deleteList = useDeleteList();
 
   // State pour le modal
   const [modalVisible, setModalVisible] = useState(false);
-  const [modalAction, setModalAction] = useState('create'); 
-  const [listName, setListName] = useState('');
+  const [modalAction, setModalAction] = useState(null); 
+  const [modalInput, setModalInput] = useState('');
   const [selectedList, setSelectedList] = useState(null);
 
-  // Ouvrir le modal de création
-  const openCreateModal = () => {
-    setModalAction('create');
-    setListName('');
-    setSelectedList(null);
-    setModalVisible(true);
-  };
-
-  // Ouvrir le modal de modification
-  const openUpdateModal = (list) => {
-    setModalAction('update');
-    setListName(list.name);
+  // Ouvrir le modal
+  const openModal = (action, list = null) => {
+    setModalAction(action);
     setSelectedList(list);
+    setModalInput(list ? list.name : '');
     setModalVisible(true);
   };
 
   // Valider création/mise à jour
-  const handleValidateModal = () => {
-    if (!listName.trim()) return;
+  const validateModal = () => {
+    const name = modalInput.trim();
+    if (!name) return;
 
     if (modalAction === 'create') {
-      createList.mutate({ boardId, name: listName.trim() });
-    } else if (modalAction === 'update' && selectedList) {
+      createList.mutate({ boardId, name });
+    }
+
+    if (modalAction === 'update' && selectedList) {
       updateList.mutate({
         listId: selectedList.id,
-        name: listName.trim(),
+        name: name,
       });
     }
 
     setModalVisible(false);
+    setModalInput('');
   };
 
   // Supprimer une liste
-  const handleDeleteList = (list) => {
+  const handleDelete = (list) => {
     Alert.alert(
       'Archive list',
-      `Archive "${list.name}" ?`,
+      `Archive "${list.name}" ? (Archived lists are no longer visible)`,
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: 'cancel', style: 'cancel' },
         {
           text: 'Archive',
           style: 'destructive',
@@ -101,7 +97,7 @@ const BoardDetailScreen = ({ route, navigation }) => {
   if (error) {
     return (
       <View style={styles.centerContainer}>
-        <Text style={styles.errorText}>Erreur: {error.message}</Text>
+        <Text style={styles.errorText}>Error: {error.message}</Text>
       </View>
     );
   }
@@ -118,7 +114,7 @@ const BoardDetailScreen = ({ route, navigation }) => {
         </View>
         <View style={styles.listInfo}>
           <Text style={styles.listName}>{item.name}</Text>
-          <Text style={styles.listPosition}>Position: {Math.round(item.pos)}</Text>
+          <Text style={styles.listPosition}>Position: {item.pos}</Text>
         </View>
       </TouchableOpacity>
 
@@ -126,14 +122,14 @@ const BoardDetailScreen = ({ route, navigation }) => {
       <View style={styles.actionButtons}>
         <TouchableOpacity
           style={styles.actionButton}
-          onPress={() => openUpdateModal(item)}
+          onPress={() => openModal('update', item)}
         >
-          <Text style={styles.actionButtonText}>edit</Text>
+          <Text style={[styles.actionButtonText]}>edit</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.actionButton}
-          onPress={() => handleDeleteList(item)}
+          onPress={() => handleDelete(item)}
         >
           <Text style={[styles.actionButtonText, { color: '#EB5A46' }]}>delete</Text>
         </TouchableOpacity>
@@ -148,12 +144,12 @@ const BoardDetailScreen = ({ route, navigation }) => {
         <Text style={styles.headerTitle}>Lists - {boardName}</Text>
         <TouchableOpacity
           style={styles.addButton}
-          onPress={openCreateModal}
+          onPress={() => openModal('create')}
         >
           <Text style={styles.addButtonText}>+ New list</Text>
         </TouchableOpacity>
         <Text style={styles.headerSubtitle}>
-          {lists?.length || 0} list(s)
+          {lists?.length || 0} list(s) in board
         </Text>
       </View>
 
@@ -172,14 +168,14 @@ const BoardDetailScreen = ({ route, navigation }) => {
             <Text style={styles.modalTitle}>
               {modalAction === 'create' 
                 ? 'Create a list' 
-                : 'Update a list'}
+                : 'Update liste'}
             </Text>
 
             <TextInput
               style={styles.modalInput}
-              placeholder="List Name"
-              value={listName}
-              onChangeText={setListName}
+              placeholder="List name"
+              value={modalInput}
+              onChangeText={setModalInput}
               autoFocus
             />
 
@@ -193,8 +189,8 @@ const BoardDetailScreen = ({ route, navigation }) => {
 
               <TouchableOpacity
                 style={[styles.modalButton, styles.saveButton]}
-                onPress={handleValidateModal}
-                disabled={!listName.trim()}
+                onPress={validateModal}
+                disabled={!modalInput.trim()}
               >
                 <Text style={styles.saveButtonText}>
                   {modalAction === 'create' ? 'Create' : 'Update'}
@@ -216,6 +212,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   errorText: { color: '#EB5A46', fontSize: 16 },
+  
   header: {
     backgroundColor: '#fff',
     padding: 16,
@@ -224,6 +221,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: { fontSize: 24, fontWeight: 'bold', color: '#172B4D' },
   headerSubtitle: { fontSize: 14, color: '#5E6C84', marginTop: 4 },
+  
   addButton: {
     backgroundColor: '#0079BF',
     paddingVertical: 8,
@@ -233,7 +231,9 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   addButtonText: { color: 'white', fontWeight: 'bold' },
+
   listContainer: { padding: 16 },
+
   listItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -261,6 +261,7 @@ const styles = StyleSheet.create({
   listInfo: { flex: 1 },
   listName: { fontSize: 16, fontWeight: '600', color: '#172B4D' },
   listPosition: { fontSize: 12, color: '#5E6C84' },
+
   actionButtons: {
     flexDirection: 'row',
     gap: 8,
@@ -271,6 +272,7 @@ const styles = StyleSheet.create({
   actionButtonText: {
     fontSize: 16,
   },
+
   // Modal styles
   modalOverlay: {
     flex: 1,
@@ -316,4 +318,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default BoardDetailScreen;
+export default ListListScreen;

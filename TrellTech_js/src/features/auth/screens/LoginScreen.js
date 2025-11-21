@@ -31,13 +31,13 @@ export default function LoginScreen() {
 
         if (tokenMatch && tokgitenMatch[1]) {
           await setAuth(tokenMatch[1]);
-          Alert.alert('Succès', 'Connexion réussie !');
+          Alert.alert('Success', 'Connection successful !');
         } else {
-          Alert.alert('Erreur', 'Impossible de récupérer le token');
+          Alert.alert('Error', 'Unable to retrieve the token');
         }
       }
     } catch (error) {
-      Alert.alert('Erreur', 'Échec de la connexion');
+      Alert.alert('Error', 'Login failed');
     } finally {
       setLoading(false);
     }
@@ -45,15 +45,15 @@ export default function LoginScreen() {
 
   const handleManualTokenLogin = async () => {
     if (!manualToken.trim()) {
-      return Alert.alert("Erreur", "Veuillez coller un token.");
+      return Alert.alert("Error", "Please paste a token.");
     }
 
     setLoading(true);
     try {
       await setAuth(manualToken.trim());
-      Alert.alert("Succès", "Connexion réussie !");
+      Alert.alert("Success", "Connection Successful !");
     } catch (err) {
-      Alert.alert("Erreur", "Token invalide");
+      Alert.alert("Error", "Invalid Token");
     } finally {
       setLoading(false);
     }
@@ -63,12 +63,12 @@ export default function LoginScreen() {
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>TrellTech</Text>
-        <Text style={styles.subtitle}>Gestion de Projets</Text>
+        <Text style={styles.subtitle}>Project Management</Text>
       </View>
 
       <View style={styles.content}>
         <Text style={styles.description}>
-          Connectez-vous avec votre compte Trello pour gérer vos projets
+          Log in with your Trello account to manage your projects
         </Text>
 
         <TouchableOpacity
@@ -79,12 +79,12 @@ export default function LoginScreen() {
           {loading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.buttonText}>Se connecter avec Trello</Text>
+            <Text style={styles.buttonText}>Connect with Trello</Text>
           )}
         </TouchableOpacity>
 
 
-        <Text style={styles.manualLabel}>Ou collez votre token manuellement :</Text>
+        <Text style={styles.manualLabel}>Or paste your token manually :</Text>
 
         <TextInput
           style={styles.input}
@@ -99,12 +99,12 @@ export default function LoginScreen() {
           onPress={handleManualTokenLogin}
           disabled={loading}
         >
-          <Text style={styles.secondaryButtonText}>Utiliser le token manuel</Text>
+          <Text style={styles.secondaryButtonText}>Use the manual token</Text>
         </TouchableOpacity>
 
         <View style={styles.infoBox}>
           <Text style={styles.infoText}>
-            Pour obtenir un token Trello, visitez:{"\n"}
+            To get a Trello token, visit:{"\n"}
             https://trello.com/1/authorize?expiration=30days&name=TrellTech&scope=read,write&response_type=token
           </Text>
         </View>
