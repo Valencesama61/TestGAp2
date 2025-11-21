@@ -1,0 +1,2117 @@
+import axios from 'axios';
+import { TRELLO_API_BASE_URL, TRELLO_API_KEY } from './constants';
+
+/**
+ * Client Axios de base pour Trello
+ */
+const trelloClient = axios.create({
+  baseURL: TRELLO_API_BASE_URL,
+  timeout: 10000,
+  headers: {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+  },
+  params: {
+    key: TRELLO_API_KEY,
+  },
+});
+
+export default trelloClient;
+
+************src/api/trello/client.js
+
+export const TRELLO_API_BASE_URL = process.env.EXPO_PUBLIC_TRELLO_API_BASE_URL || "https://api.trello.com/1";
+export const TRELLO_API_KEY = process.env.EXPO_PUBLIC_TRELLO_API_KEY;
+export const TRELLO_TOKEN_SCOPES = 'read,write,account';
+export const TRELLO_TOKEN_EXPIRATION = '30days';
+export const TRELLO_AUTH_URL = `https://trello.com/1/authorize?expiration=${TRELLO_TOKEN_EXPIRATION}&name=TrellTech&scope=${TRELLO_TOKEN_SCOPES}&response_type=token&key=${TRELLO_API_KEY}`;
+
+************src/api/trello/constants.js 
+
+/**
+ * WORKSPACES (Organizations dans Trello)
+ * Les workspaces permettent de regrouper des boards
+ */
+export const WORKSPACES_ENDPOINTS = {
+
+  getAll: '/members/me/organizations',
+  
+  getById: (id) => `/organizations/${id}`,
+  
+  create: '/organizations',
+  
+  update: (id) => `/organizations/${id}`,
+  
+  delete: (id) => `/organizations/${id}`,
+  
+  getBoards: (id) => `/organizations/${id}/boards`,
+  
+  getMembers: (id) => `/organizations/${id}/members`,
+};
+
+/**
+ * BOARDS
+ * Les boards contiennent des listes de cartes
+ */
+export const BOARDS_ENDPOINTS = {
+
+  getAll: '/members/me/boards',
+
+  getById: (id) => `/boards/${id}`,
+
+  create: '/boards',
+  
+  update: (id) => `/boards/${id}`,
+  
+  delete: (id) => `/boards/${id}`,
+  
+  getLists: (id) => `/boards/${id}/lists`,
+  
+  getMembers: (id) => `/boards/${id}/members`,
+  
+  getCards: (id) => `/boards/${id}/cards`,
+  
+  getLabels: (id) => `/boards/${id}/labels`,
+};
+
+/**
+ * LISTS
+ * Les listes contiennent des cartes (ex: To Do, In Progress, Done)
+ */
+export const LISTS_ENDPOINTS = {
+  getById: (id) => `/lists/${id}`,
+  
+  create: '/lists',
+  
+  update: (id) => `/lists/${id}`,
+  
+  archive: (id) => `/lists/${id}/closed`,
+  
+  getCards: (id) => `/lists/${id}/cards`,
+  
+  moveAllCards: (id) => `/lists/${id}/moveAllCards`,
+};
+
+/**
+ * CARDS
+ * Les cartes sont les tâches individuelles
+ */
+export const CARDS_ENDPOINTS = {
+
+  getById: (id) => `/cards/${id}`,
+  
+  // Paramètres requis: name, idList
+  create: '/cards',
+  
+  // Peut modifier: name, desc, idList, pos, due, dueComplete, etc.
+  update: (id) => `/cards/${id}`,
+  
+  delete: (id) => `/cards/${id}`,
+  
+  // Paramètre requis: value (memberId)
+  addMember: (id) => `/cards/${id}/idMembers`,
+  
+  removeMember: (cardId, memberId) => `/cards/${cardId}/idMembers/${memberId}`,
+  
+  // Récupérer tous les membres assignés à une carte
+  getMembers: (id) => `/cards/${id}/members`,
+  
+  // Ajouter un label à une carte
+  addLabel: (id) => `/cards/${id}/idLabels`,
+  
+  // Retirer un label d'une carte
+  removeLabel: (cardId, labelId) => `/cards/${cardId}/idLabels/${labelId}`,
+  
+  // Récupérer les commentaires (actions) d'une carte
+  getComments: (id) => `/cards/${id}/actions`,
+  
+  addComment: (id) => `/cards/${id}/actions/comments`,
+  
+  getChecklists: (id) => `/cards/${id}/checklists`,
+  
+  addChecklist: (id) => `/cards/${id}/checklists`,
+  
+  // Récupérer les pièces jointes d'une carte
+  getAttachments: (id) => `/cards/${id}/attachments`,
+  
+  // Ajouter une pièce jointe
+  addAttachment: (id) => `/cards/${id}/attachments`,
+};
+
+/**
+ * MEMBERS
+ * Informations sur les utilisateurs Trello
+ */
+export const MEMBERS_ENDPOINTS = {
+  getMe: '/members/me',
+  
+  getById: (id) => `/members/${id}`,
+  
+  getBoards: (id) => `/members/${id}/boards`,
+  
+  getOrganizations: (id) => `/members/${id}/organizations`,
+  
+  getCards: (id) => `/members/${id}/cards`,
+};
+
+/**
+ * LABELS
+ * Les labels permettent de catégoriser les cartes
+ */
+export const LABELS_ENDPOINTS = {
+  getById: (id) => `/labels/${id}`,
+  
+  create: '/labels',
+  
+  update: (id) => `/labels/${id}`,
+
+  delete: (id) => `/labels/${id}`,
+};
+
+/**
+ * CHECKLISTS
+ * Les checklists sont des listes de sous-tâches dans une carte
+ */
+export const CHECKLISTS_ENDPOINTS = {
+  getById: (id) => `/checklists/${id}`,
+
+  create: '/checklists',
+  
+  update: (id) => `/checklists/${id}`,
+  
+  delete: (id) => `/checklists/${id}`,
+  
+  getItems: (id) => `/checklists/${id}/checkItems`,
+  
+  addItem: (id) => `/checklists/${id}/checkItems`,
+  
+  updateItem: (checklistId, itemId) => `/checklists/${checklistId}/checkItems/${itemId}`,
+  
+  deleteItem: (checklistId, itemId) => `/checklists/${checklistId}/checkItems/${itemId}`,
+};
+
+/**
+ * ACTIONS
+ * Les actions représentent l'historique des modifications
+ */
+export const ACTIONS_ENDPOINTS = {
+  getById: (id) => `/actions/${id}`,
+  
+  update: (id) => `/actions/${id}`,
+  
+  delete: (id) => `/actions/${id}`,
+};
+
+/**
+ * SEARCH
+ * Recherche globale dans Trello
+ */
+export const SEARCH_ENDPOINTS = {
+  // Rechercher dans tous les éléments
+  search: '/search',
+  
+  // Rechercher uniquement des cartes
+  searchCards: '/search/cards',
+  
+  // Rechercher uniquement des membres
+  searchMembers: '/search/members',
+};
+
+/**
+ * NOTIFICATIONS
+ * Gérer les notifications de l'utilisateur
+ */
+export const NOTIFICATIONS_ENDPOINTS = {
+  getAll: '/members/me/notifications',
+  
+  getById: (id) => `/notifications/${id}`,
+  
+  markAsRead: (id) => `/notifications/${id}`,
+  
+  markAllAsRead: '/notifications/all/read',
+};
+
+/**
+ * CUSTOM FIELDS 
+ * Ajouter des données custom aux cartes
+ */
+export const CUSTOM_FIELDS_ENDPOINTS = {
+  // Récupérer les champs personnalisés d'un board
+  getByBoard: (boardId) => `/boards/${boardId}/customFields`,
+  
+  // Créer un champ personnalisé
+  create: '/customFields',
+  
+  // Mettre à jour un champ personnalisé
+  update: (id) => `/customFields/${id}`,
+  
+  // Supprimer un champ personnalisé
+  delete: (id) => `/customFields/${id}`,
+};
+
+// ============================================
+// HELPERS - Fonctions utilitaires
+// ============================================
+
+/**
+ * Construire une URL complète avec des query params
+ * @param {string} endpoint - L'endpoint de base
+ * @param {Object} params - Les paramètres de requête
+ * @returns {string} URL complète
+ */
+export const buildUrl = (endpoint, params = {}) => {
+  const queryString = Object.entries(params)
+    .filter(([_, value]) => value !== undefined && value !== null)
+    .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
+    .join('&');
+  
+  return queryString ? `${endpoint}?${queryString}` : endpoint;
+};
+
+/**
+ * Paramètres communs pour récupérer des détails complets
+ */
+export const COMMON_PARAMS = {
+  // Pour les cartes
+  cardDetails: {
+    fields: 'all',
+    members: true,
+    member_fields: 'fullName,username,avatarUrl',
+    labels: true,
+    attachments: true,
+    checklists: 'all',
+  },
+  
+  // Pour les boards
+  boardDetails: {
+    fields: 'all',
+    lists: 'open',
+    members: 'all',
+    labels: 'all',
+  },
+  
+  // Pour les listes
+  listDetails: {
+    fields: 'all',
+    cards: 'open',
+  },
+};
+
+// Export par défaut de tous les endpoints
+export default {
+  WORKSPACES_ENDPOINTS,
+  BOARDS_ENDPOINTS,
+  LISTS_ENDPOINTS,
+  CARDS_ENDPOINTS,
+  MEMBERS_ENDPOINTS,
+  LABELS_ENDPOINTS,
+  CHECKLISTS_ENDPOINTS,
+  ACTIONS_ENDPOINTS,
+  SEARCH_ENDPOINTS,
+  NOTIFICATIONS_ENDPOINTS,
+  CUSTOM_FIELDS_ENDPOINTS,
+};
+
+
+************src/api/trello/endpoint.js
+
+
+import trelloClient from './client';
+import { getAuthToken, clearAuthToken } from '../../store/authStore';
+
+/**
+ * Configuration des intercepteurs
+ */
+export const setupInterceptors = () => {
+  // Intercepteur de requêtes
+  trelloClient.interceptors.request.use(
+    (config) => {
+      const token = getAuthToken();
+      
+      if (token) {
+        config.params = {
+          ...config.params,
+          token: token,
+        };
+      }
+
+      // Logger en développement
+      if (__DEV__) {
+        console.log('API Request:', {
+          method: config.method?.toUpperCase(),
+          url: config.url,
+          params: config.params,
+        });
+      }
+
+      return config;
+    },
+    (error) => {
+      console.error('Request Error:', error);
+      return Promise.reject(error);
+    }
+  );
+
+  // Intercepteur de réponses
+  trelloClient.interceptors.response.use(
+    (response) => {
+      if (__DEV__) {
+        console.log('API Response:', {
+          status: response.status,
+          url: response.config.url,
+          data: response.data,
+        });
+      }
+      return response;
+    },
+    (error) => {
+      return handleAPIError(error);
+    }
+  );
+};
+
+/**
+ * Gestion centralisée des erreurs
+ */
+const handleAPIError = (error) => {
+  if (error.response) {
+    const { status, data } = error.response;
+
+    switch (status) {
+      case 401:
+        console.error('Unauthorized - Invalid or expired token');
+        clearAuthToken();
+        // Vous pourrez utiliser votre navigation ici
+        // import { NavigationService } from '../../navigation/services';
+        // NavigationService.navigate('Login');
+        break;
+      case 403:
+        console.error('Access prohibited');
+        break;
+      case 404:
+        console.error('Resource not found');
+        break;
+      case 429:
+        console.error('Rate limit exceeded');
+        break;
+      default:
+        console.error('API Error:', data?.message || 'Unknown error');
+    }
+
+    return Promise.reject({
+      status,
+      message: data?.message || 'An error occurred',
+      data,
+    });
+  } else if (error.request) {
+    console.error('Network error - No response from server');
+    return Promise.reject({
+      status: 0,
+      message: 'Connection problem. Check your internet connection.',
+    });
+  } else {
+    console.error('Error:', error.message);
+    return Promise.reject({
+      status: -1,
+      message: error.message,
+    });
+  }
+};
+
+export default trelloClient;
+
+************src/api/trello/interceptors.js
+
+
+
+import PropTypes from 'prop-types';
+
+/**
+ * Schema pour un Workspace (Organization)
+ */
+export const WorkspaceSchema = PropTypes.shape({
+  id: PropTypes.string.isRequired,
+  name: PropTypes.string.isRequired,
+  displayName: PropTypes.string,
+  desc: PropTypes.string,
+  url: PropTypes.string,
+  website: PropTypes.string,
+  logoHash: PropTypes.string,
+  products: PropTypes.arrayOf(PropTypes.number),
+  powerUps: PropTypes.arrayOf(PropTypes.any),
+});
+
+/**
+ * Schema pour un Board
+ */ 
+export const BoardSchema = PropTypes.shape({
+  id: PropTypes.string.isRequired,
+  name: PropTypes.string.isRequired,
+  desc: PropTypes.string,
+  closed: PropTypes.bool,
+  idWorkSpace: PropTypes.string,
+  pinned: PropTypes.bool,
+  url: PropTypes.string,
+  shortUrl: PropTypes.string,
+  prefs: PropTypes.object,
+  labelNames: PropTypes.object,
+  starred: PropTypes.bool,
+  dateLastActivity: PropTypes.string,
+  dateLastView: PropTypes.string,
+});
+
+/**
+ * Schema pour une List
+ */
+export const ListSchema = PropTypes.shape({
+  id: PropTypes.string.isRequired,
+  name: PropTypes.string.isRequired,
+  closed: PropTypes.bool,
+  idBoard: PropTypes.string.isRequired,
+  pos: PropTypes.number,
+  subscribed: PropTypes.bool,
+  softLimit: PropTypes.number,
+});
+
+/**
+ * Schema pour une Card
+ */
+export const CardSchema = PropTypes.shape({
+  id: PropTypes.string.isRequired,
+  name: PropTypes.string.isRequired,
+  desc: PropTypes.string,
+  closed: PropTypes.bool,
+  idList: PropTypes.string.isRequired,
+  idBoard: PropTypes.string.isRequired,
+  idMembers: PropTypes.arrayOf(PropTypes.string),
+  idLabels: PropTypes.arrayOf(PropTypes.string),
+  url: PropTypes.string,
+  shortUrl: PropTypes.string,
+  pos: PropTypes.number,
+  due: PropTypes.string,
+  dueComplete: PropTypes.bool,
+  dateLastActivity: PropTypes.string,
+  badges: PropTypes.object,
+  labels: PropTypes.arrayOf(PropTypes.object),
+  cover: PropTypes.object,
+});
+
+/**
+ *
+ * Scheme pour un Label 
+ */
+export const LabelSchema = PropTypes.shape({
+    id: PropTypes.string.isRequired,
+    name: PropTypes.string,
+    color: PropTypes.string,
+});
+
+/**
+ * Schema pour un Member
+ */
+export const MemberSchema = PropTypes.shape({
+  id: PropTypes.string.isRequired,
+  username: PropTypes.string.isRequired,
+  fullName: PropTypes.string,
+  avatarUrl: PropTypes.string,
+  initials: PropTypes.string,
+  email: PropTypes.string,
+  bio: PropTypes.string,
+  url: PropTypes.string,
+});
+
+***********************src/api/schema.js
+
+import trelloClient from '../../../api/trello/client';
+import { CARDS_ENDPOINTS } from '../../../api/trello/endpoints';
+
+/**
+ * Service pour gérer les cartes (Cards)
+ */
+const cardService = {
+  /**
+   * Récupérer toutes les cartes d'une liste
+   * @param {string} listId - ID de la liste
+   * @returns {Promise<Array>} Liste des cartes
+   */
+  getCardsByList: async (listId) => {
+    try {
+      const response = await trelloClient.get(`/lists/${listId}/cards`);
+      return response.data;
+    } catch (error) {
+      console.error('Error retrieving cards:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Récupérer une carte par son ID
+   * @param {string} cardId - ID de la carte
+   * @returns {Promise<Object>} Détails de la carte
+   */
+  getCardById: async (cardId) => {
+    try {
+      const response = await trelloClient.get(CARDS_ENDPOINTS.getById(cardId), {
+        params: {
+          fields: 'all',
+          members: true,
+          member_fields: 'fullName,username,avatarUrl',
+          labels: true,
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error retrieving card:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Créer une nouvelle carte
+   * @param {Object} cardData - Données de la carte
+   * @param {string} cardData.name - Nom de la carte (requis)
+   * @param {string} cardData.idList - ID de la liste (requis)
+   * @param {string} [cardData.desc] - Description de la carte
+   * @param {string} [cardData.pos] - Position dans la liste (top, bottom, ou nombre)
+   * @param {string} [cardData.due] - Date d'échéance
+   * @returns {Promise<Object>} Carte créée
+   */
+  createCard: async (cardData) => {
+    try {
+      const response = await trelloClient.post(CARDS_ENDPOINTS.create, null, {
+        params: {
+          name: cardData.name,
+          idList: cardData.idList,
+          desc: cardData.desc || '',
+          pos: cardData.pos || 'bottom',
+          due: cardData.due || null,
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error creating map:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Mettre à jour une carte
+   * @param {string} cardId - ID de la carte
+   * @param {Object} updates - Champs à mettre à jour
+   * @returns {Promise<Object>} Carte mise à jour
+   */
+  updateCard: async (cardId, updates) => {
+    try {
+      const response = await trelloClient.put(
+        CARDS_ENDPOINTS.update(cardId),
+        null,
+        { params: updates }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error updating map:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Supprimer une carte
+   * @param {string} cardId - ID de la carte
+   * @returns {Promise<void>}
+   */
+  deleteCard: async (cardId) => {
+    try {
+      await trelloClient.delete(CARDS_ENDPOINTS.delete(cardId));
+    } catch (error) {
+      console.error('Error deleting the card:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Déplacer une carte vers une autre liste
+   * @param {string} cardId - ID de la carte
+   * @param {string} newListId - ID de la nouvelle liste
+   * @returns {Promise<Object>} Carte déplacée
+   */
+  moveCard: async (cardId, newListId) => {
+    try {
+      const response = await trelloClient.put(
+        CARDS_ENDPOINTS.update(cardId),
+        null,
+        { params: { idList: newListId } }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error moving the map:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Assigner un membre à une carte
+   * @param {string} cardId - ID de la carte
+   * @param {string} memberId - ID du membre
+   * @returns {Promise<Array>} Liste des membres de la carte
+   */
+  addMemberToCard: async (cardId, memberId) => {
+    try {
+      const response = await trelloClient.post(
+        CARDS_ENDPOINTS.addMember(cardId),
+        null,
+        { params: { value: memberId } }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error adding member:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Retirer un membre d'une carte
+   * @param {string} cardId - ID de la carte
+   * @param {string} memberId - ID du membre
+   * @returns {Promise<void>}
+   */
+  removeMemberFromCard: async (cardId, memberId) => {
+    try {
+      await trelloClient.delete(CARDS_ENDPOINTS.removeMember(cardId, memberId));
+    } catch (error) {
+      console.error('Error removing member:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Récupérer les membres d'une carte
+   * @param {string} cardId - ID de la carte
+   * @returns {Promise<Array>} Liste des membres
+   */
+  getCardMembers: async (cardId) => {
+    try {
+      const response = await trelloClient.get(CARDS_ENDPOINTS.getMembers(cardId));
+      return response.data;
+    } catch (error) {
+      console.error('Error retrieving members:', error);
+      throw error;
+    }
+  },
+};
+
+export default cardService;
+
+
+*******************src/features/cards/services/cardService.js
+
+
+import React, { useState } from 'react';
+import {
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  Text,
+  Alert,
+} from 'react-native';
+import { useCards, useCreateCard, useDeleteCard } from '../hooks/useCards';
+import CardList from '../components/CardList';
+import CreateCardModal from '../components/CreateCardModal';
+
+const CardsListScreen = ({ route, navigation }) => {
+  const listId = route?.params?.listId || 'default-list';
+  const listName = route?.params?.listName || 'Ma Liste';
+
+  // State pour le modal
+  const [modalVisible, setModalVisible] = useState(false);
+
+  // Hooks React Query
+  const { data: cards, isLoading, error, refetch } = useCards(listId);
+  const createCardMutation = useCreateCard();
+  const deleteCardMutation = useDeleteCard();
+
+  /**
+   * Gérer le clic sur une carte
+   */
+  const handleCardPress = (card) => {
+    navigation.navigate('CardDetail', { 
+      cardId: card.id,
+      cardName: card.name 
+    });
+  };
+
+  /**
+   * Gérer le long press (suppression)
+   */
+  const handleCardLongPress = (card) => {
+    Alert.alert(
+      'Supprimer la carte',
+      `Êtes-vous sûr de vouloir supprimer "${card.name}" ?`,
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Supprimer',
+          style: 'destructive',
+          onPress: () => handleDeleteCard(card.id),
+        },
+      ]
+    );
+  };
+
+  /**
+   * Supprimer une carte
+   */
+  const handleDeleteCard = async (cardId) => {
+    try {
+      await deleteCardMutation.mutateAsync({ cardId, listId });
+      Alert.alert('Succès', 'Carte supprimée avec succès');
+    } catch (error) {
+      Alert.alert('Erreur', 'Impossible de supprimer la carte');
+    }
+  };
+
+  /**
+   * Créer une nouvelle carte
+   */
+  const handleCreateCard = async (cardData) => {
+    try {
+      await createCardMutation.mutateAsync(cardData);
+      Alert.alert('Succès', 'Carte créée avec succès');
+    } catch (error) {
+      Alert.alert('Erreur', 'Impossible de créer la carte');
+      throw error;
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      {/* Header avec le nom de la liste */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>{listName}</Text>
+        <Text style={styles.headerSubtitle}>
+          {cards?.length || 0} carte(s)
+        </Text>
+      </View>
+
+      {/* Liste des cartes */}
+      <CardList
+        cards={cards}
+        loading={isLoading}
+        error={error}
+        onCardPress={handleCardPress}
+        onCardLongPress={handleCardLongPress}
+        onRefresh={refetch}
+      />
+
+      {/* Bouton flottant pour ajouter une carte */}
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={() => setModalVisible(true)}
+      >
+        <Text style={styles.fabText}>+</Text>
+      </TouchableOpacity>
+
+      {/* Modal de création */}
+      <CreateCardModal
+        visible={modalVisible}
+        listId={listId}
+        onClose={() => setModalVisible(false)}
+        onCreate={handleCreateCard}
+      />
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#F4F5F7',
+  },
+  header: {
+    backgroundColor: '#fff',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#DFE1E6',
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#172B4D',
+  },
+  headerSubtitle: {
+    fontSize: 12,
+    color: '#5E6C84',
+    marginTop: 4,
+  },
+  fab: {
+    position: 'absolute',
+    bottom: 24,
+    right: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#0079BF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  fabText: {
+    fontSize: 32,
+    color: '#fff',
+    fontWeight: '300',
+  },
+});
+
+export default CardsListScreen;
+
+
+****************src/features/cards/screens/CardsListScreen.jsx
+
+
+import React, { useState } from 'react';
+import {
+  View,
+  ScrollView,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  TextInput,
+  ActivityIndicator,
+  Alert,
+} from 'react-native';
+import {
+  useCard,
+  useUpdateCard,
+  useAssignMember,
+  useRemoveMember,
+} from '../hooks/useCards';
+
+const CardDetailScreen = ({ route, navigation }) => {
+  const { cardId } = route.params;
+
+  // State local
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedName, setEditedName] = useState('');
+  const [editedDesc, setEditedDesc] = useState('');
+
+  // Hooks
+  const { data: card, isLoading, error } = useCard(cardId);
+  const updateCardMutation = useUpdateCard();
+  const assignMemberMutation = useAssignMember();
+  const removeMemberMutation = useRemoveMember();
+
+  /**
+   * Activer le mode édition
+   */
+  const handleEditStart = () => {
+    setEditedName(card.name);
+    setEditedDesc(card.desc || '');
+    setIsEditing(true);
+  };
+
+  /**
+   * Sauvegarder les modifications
+   */
+  const handleSave = async () => {
+    try {
+      await updateCardMutation.mutateAsync({
+        cardId: card.id,
+        updates: {
+          name: editedName,
+          desc: editedDesc,
+        },
+      });
+      setIsEditing(false);
+      Alert.alert('Success', 'Updated map');
+    } catch (error) {
+      Alert.alert('Erreur', 'Unable to update the map');
+    }
+  };
+
+  /**
+   * Retirer un membre
+   */
+  const handleRemoveMember = async (memberId) => {
+    Alert.alert(
+      'Remove member',
+      'Are you sure you want to remove this member??',
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await removeMemberMutation.mutateAsync({ cardId, memberId });
+              Alert.alert('Succès', 'Membre retiré');
+            } catch (error) {
+              Alert.alert('Erreur', 'Unable to remove the member');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  if (isLoading) {
+    return (
+      <View style={styles.centerContainer}>
+        <ActivityIndicator size="large" color="#0079BF" />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.centerContainer}>
+        <Text style={styles.errorText}>Erreur: {error.message}</Text>
+      </View>
+    );
+  }
+
+  if (!card) {
+    return (
+      <View style={styles.centerContainer}>
+        <Text>Card not found</Text>
+      </View>
+    );
+  }
+
+  return (
+    <ScrollView style={styles.container}>
+      {/* Section Titre */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Title</Text>
+        {isEditing ? (
+          <TextInput
+            style={styles.input}
+            value={editedName}
+            onChangeText={setEditedName}
+            placeholder="Card Name"
+          />
+        ) : (
+          <Text style={styles.cardTitle}>{card.name}</Text>
+        )}
+      </View>
+
+      {/* Section Description */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Description</Text>
+        {isEditing ? (
+          <TextInput
+            style={[styles.input, styles.textArea]}
+            value={editedDesc}
+            onChangeText={setEditedDesc}
+            placeholder="Description of card"
+            multiline
+            numberOfLines={6}
+          />
+        ) : (
+          <Text style={styles.description}>
+            {card.desc || 'No description'}
+          </Text>
+        )}
+      </View>
+
+      {/* Section Membres */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}> Assigned members</Text>
+        {card.members && card.members.length > 0 ? (
+          card.members.map((member) => (
+            <View key={member.id} style={styles.memberItem}>
+              <View>
+                <Text style={styles.memberName}>{member.fullName}</Text>
+                <Text style={styles.memberUsername}>@{member.username}</Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => handleRemoveMember(member.id)}
+                style={styles.removeButton}
+              >
+                <Text style={styles.removeButtonText}>Retirer</Text>
+              </TouchableOpacity>
+            </View>
+          ))
+        ) : (
+          <Text style={styles.emptyText}>No members assigned</Text>
+        )}
+      </View>
+
+      {/* Section Labels */}
+      {card.labels && card.labels.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Labels</Text>
+          <View style={styles.labelsContainer}>
+            {card.labels.map((label) => (
+              <View
+                key={label.id}
+                style={[
+                  styles.labelChip,
+                  { backgroundColor: label.color || '#ccc' },
+                ]}
+              >
+                <Text style={styles.labelText}>{label.name || 'No Name'}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      )}
+
+      {/* Date d'échéance */}
+      {card.due && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Due date</Text>
+          <Text style={styles.dueDate}>
+            {new Date(card.due).toLocaleString('fr-FR')}
+          </Text>
+          {card.dueComplete && (
+            <Text style={styles.completeTag}>Add</Text>
+          )}
+        </View>
+      )}
+
+      {/* Boutons d'action */}
+      <View style={styles.actionsContainer}>
+        {isEditing ? (
+          <>
+            <TouchableOpacity
+              style={[styles.button, styles.cancelButton]}
+              onPress={() => setIsEditing(false)}
+            >
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.button, styles.saveButton]}
+              onPress={handleSave}
+            >
+              <Text style={styles.saveButtonText}>Save</Text>
+            </TouchableOpacity>
+          </>
+        ) : (
+          <TouchableOpacity
+            style={[styles.button, styles.editButton]}
+            onPress={handleEditStart}
+          >
+            <Text style={styles.editButtonText}>Update</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    </ScrollView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#F4F5F7',
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorText: {
+    color: '#EB5A46',
+    fontSize: 14,
+  },
+  section: {
+    backgroundColor: '#fff',
+    padding: 16,
+    marginBottom: 8,
+  },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#5E6C84',
+    marginBottom: 12,
+  },
+  cardTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#172B4D',
+  },
+  description: {
+    fontSize: 14,
+    color: '#172B4D',
+    lineHeight: 20,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#DFE1E6',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 14,
+    color: '#172B4D',
+  },
+  textArea: {
+    height: 120,
+    textAlignVertical: 'top',
+  },
+  memberItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F4F5F7',
+  },
+  memberName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#172B4D',
+  },
+  memberUsername: {
+    fontSize: 12,
+    color: '#5E6C84',
+  },
+  removeButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: '#EB5A46',
+    borderRadius: 4,
+  },
+  removeButtonText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  emptyText: {
+    fontSize: 14,
+    color: '#5E6C84',
+    fontStyle: 'italic',
+  },
+  labelsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  labelChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 4,
+  },
+  labelText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  dueDate: {
+    fontSize: 14,
+    color: '#172B4D',
+  },
+  completeTag: {
+    marginTop: 8,
+    fontSize: 12,
+    color: '#61BD4F',
+    fontWeight: '600',
+  },
+  actionsContainer: {
+    flexDirection: 'row',
+    padding: 16,
+    gap: 12,
+    backgroundColor: '#fff',
+    marginBottom: 20,
+  },
+  button: {
+    flex: 1,
+    padding: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  editButton: {
+    backgroundColor: '#0079BF',
+  },
+  editButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  cancelButton: {
+    backgroundColor: '#F4F5F7',
+  },
+  cancelButtonText: {
+    color: '#5E6C84',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  saveButton: {
+    backgroundColor: '#61BD4F',
+  },
+  saveButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+});
+
+export default CardDetailScreen;
+****************src/features/cards/screens/CardsDetailScreen.jsx
+
+
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import cardService from '../services/cardService';
+
+/**
+ * Hook pour récupérer les cartes d'une liste
+ * @param {string} listId - ID de la liste
+ */
+export const useCards = (listId) => {
+  return useQuery({
+    queryKey: ['cards', listId],
+    queryFn: () => cardService.getCardsByList(listId),
+    enabled: !!listId, // Ne lance la requête que si listId existe
+    staleTime: 30000, 
+  });
+};
+
+/**
+ * Hook pour récupérer une carte spécifique
+ * @param {string} cardId - ID de la carte
+ */
+export const useCard = (cardId) => {
+  return useQuery({
+    queryKey: ['card', cardId],
+    queryFn: () => cardService.getCardById(cardId),
+    enabled: !!cardId,
+  });
+};
+
+/**
+ * Hook pour créer une carte
+ */
+export const useCreateCard = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (cardData) => cardService.createCard(cardData),
+    onSuccess: (newCard) => {
+      // Invalider le cache des cartes de la liste
+      queryClient.invalidateQueries(['cards', newCard.idList]);
+    },
+    onError: (error) => {
+      console.error('Card creation error:', error);
+    },
+  });
+};
+
+/**
+ * Hook pour mettre à jour une carte
+ */
+export const useUpdateCard = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ cardId, updates }) => cardService.updateCard(cardId, updates),
+    onSuccess: (updatedCard) => {
+      // Invalider le cache
+      queryClient.invalidateQueries(['card', updatedCard.id]);
+      queryClient.invalidateQueries(['cards', updatedCard.idList]);
+    },
+  });
+};
+
+/**
+ * Hook pour supprimer une carte
+ */
+export const useDeleteCard = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ cardId, listId }) => cardService.deleteCard(cardId),
+    onSuccess: (_, variables) => {
+      // Invalider le cache de la liste
+      queryClient.invalidateQueries(['cards', variables.listId]);
+    },
+  });
+};
+
+/**
+ * Hook pour déplacer une carte
+ */
+export const useMoveCard = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ cardId, newListId, oldListId }) => 
+      cardService.moveCard(cardId, newListId),
+    onSuccess: (_, variables) => {
+      // Invalider les deux listes
+      queryClient.invalidateQueries(['cards', variables.oldListId]);
+      queryClient.invalidateQueries(['cards', variables.newListId]);
+    },
+  });
+};
+
+/**
+ * Hook pour assigner un membre
+ */
+export const useAssignMember = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ cardId, memberId }) => 
+      cardService.addMemberToCard(cardId, memberId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries(['card', variables.cardId]);
+    },
+  });
+};
+
+/**
+ * Hook pour retirer un membre
+ */
+export const useRemoveMember = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ cardId, memberId }) => 
+      cardService.removeMemberFromCard(cardId, memberId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries(['card', variables.cardId]);
+    },
+  });
+};
+*********************src/features/cards/hooks/useCards.js
+
+
+import React from 'react';
+import { FlatList, View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import PropTypes from 'prop-types';
+import CardItem from './CardsItem';
+//import CardItem from './CardItem';
+
+const CardList = ({ cards, loading, error, onCardPress, onCardLongPress, onRefresh }) => {
+  if (loading) {
+    return (
+      <View style={styles.centerContainer}>
+        <ActivityIndicator size="large" color="#0079BF" />
+        <Text style={styles.loadingText}>Loading maps...</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.centerContainer}>
+        <Text style={styles.errorText}> Error: {error.message}</Text>
+      </View>
+    );
+  }
+
+  if (!cards || cards.length === 0) {
+    return (
+      <View style={styles.centerContainer}>
+        <Text style={styles.emptyText}> No cards in this list</Text>
+      </View>
+    );
+  }
+
+  return (
+    <FlatList
+      data={cards}
+      keyExtractor={(item) => item.id}
+      renderItem={({ item }) => (
+        <CardItem
+          card={item}
+          onPress={onCardPress}
+          onLongPress={onCardLongPress}
+        />
+      )}
+      contentContainerStyle={styles.listContainer}
+      onRefresh={onRefresh}
+      refreshing={loading}
+    />
+  );
+};
+
+CardList.propTypes = {
+  cards: PropTypes.array,
+  loading: PropTypes.bool,
+  error: PropTypes.object,
+  onCardPress: PropTypes.func.isRequired,
+  onCardLongPress: PropTypes.func,
+  onRefresh: PropTypes.func,
+};
+
+const styles = StyleSheet.create({
+  listContainer: {
+    padding: 16,
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+    color: '#5E6C84',
+  },
+  errorText: {
+    fontSize: 14,
+    color: '#EB5A46',
+    textAlign: 'center',
+  },
+  emptyText: {
+    fontSize: 14,
+    color: '#5E6C84',
+    textAlign: 'center',
+  },
+});
+
+export default CardList;
+*******************src/features/cards/components/CardList.jsx
+
+
+import React from 'react';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import PropTypes from 'prop-types';
+import { CardSchema } from '../../../api/schema';
+//import { CardSchema } from '../../../api/trello/schemas';
+
+const CardItem = ({ card, onPress, onLongPress }) => {
+  const hasMembers = card.idMembers && card.idMembers.length > 0;
+  const hasLabels = card.labels && card.labels.length > 0;
+  const hasDueDate = !!card.due;
+
+  return (
+    <TouchableOpacity
+      style={styles.container}
+      onPress={() => onPress(card)}
+      onLongPress={() => onLongPress && onLongPress(card)}
+      activeOpacity={0.7}
+    >
+      {/* Labels */}
+      {hasLabels && (
+        <View style={styles.labelsContainer}>
+          {card.labels.slice(0, 3).map((label) => (
+            <View
+              key={label.id}
+              style={[
+                styles.label,
+                { backgroundColor: label.color || '#ccc' },
+              ]}
+            />
+          ))}
+        </View>
+      )}
+
+      {/* Titre de la carte */}
+      <Text style={styles.title} numberOfLines={2}>
+        {card.name}
+      </Text>
+
+      {/* Description (aperçu) */}
+      {card.desc && (
+        <Text style={styles.description} numberOfLines={1}>
+          {card.desc}
+        </Text>
+      )}
+
+      {/* Footer avec métadonnées */}
+      <View style={styles.footer}>
+        {/* Date d'échéance */}
+        {hasDueDate && (
+          <View style={styles.dueDateContainer}>
+            <Text style={styles.dueDate}>
+                {new Date(card.due).toLocaleDateString()}
+            </Text>
+          </View>
+        )}
+
+        {/* Nombre de membres */}
+        {hasMembers && (
+          <View style={styles.membersContainer}>
+            <Text style={styles.membersCount}>
+             {card.idMembers.length}
+            </Text>
+          </View>
+        )}
+
+        {/* Badges (commentaires, pièces jointes, etc.) */}
+        {card.badges && card.badges.comments > 0 && (
+          <Text style={styles.badge}> {card.badges.comments}</Text>
+        )}
+        {card.badges && card.badges.attachments > 0 && (
+          <Text style={styles.badge}>📎 {card.badges.attachments}</Text>
+        )}
+      </View>
+    </TouchableOpacity>
+  );
+};
+
+CardItem.propTypes = {
+  card: CardSchema.isRequired,
+  onPress: PropTypes.func.isRequired,
+  onLongPress: PropTypes.func,
+};
+
+const styles = StyleSheet.create({
+  container: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  labelsContainer: {
+    flexDirection: 'row',
+    marginBottom: 8,
+    gap: 4,
+  },
+  label: {
+    width: 40,
+    height: 8,
+    borderRadius: 4,
+  },
+  title: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#172B4D',
+    marginBottom: 4,
+  },
+  description: {
+    fontSize: 12,
+    color: '#5E6C84',
+    marginBottom: 8,
+  },
+  footer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+  dueDateContainer: {
+    backgroundColor: '#F4F5F7',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 3,
+  },
+  dueDate: {
+    fontSize: 11,
+    color: '#5E6C84',
+  },
+  membersContainer: {
+    backgroundColor: '#F4F5F7',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 3,
+  },
+  membersCount: {
+    fontSize: 11,
+    color: '#5E6C84',
+  },
+  badge: {
+    fontSize: 11,
+    color: '#5E6C84',
+  },
+});
+
+export default CardItem;
+
+*******************src/features/cards/components/CardItem.jsx
+
+
+import React, { useState } from 'react';
+import {
+  Modal,
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
+import PropTypes from 'prop-types';
+
+const CreateCardModal = ({ visible, listId, onClose, onCreate }) => {
+  const [cardName, setCardName] = useState('');
+  const [cardDescription, setCardDescription] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleCreate = async () => {
+    if (!cardName.trim()) {
+      alert('Le nom de la carte est requis');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await onCreate({
+        name: cardName,
+        desc: cardDescription,
+        idList: listId,
+      });
+      
+      // Réinitialiser et fermer
+      setCardName('');
+      setCardDescription('');
+      onClose();
+    } catch (error) {
+      alert('Erreur lors de la création de la carte');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+    >
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.modalOverlay}
+      >
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>New Card</Text>
+
+          <TextInput
+            style={styles.input}
+            placeholder="Card Name *"
+            value={cardName}
+            onChangeText={setCardName}
+            autoFocus
+          />
+
+          <TextInput
+            style={[styles.input, styles.textArea]}
+            placeholder="Description (optionnal)"
+            value={cardDescription}
+            onChangeText={setCardDescription}
+            multiline
+            numberOfLines={4}
+          />
+
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity
+              style={[styles.button, styles.cancelButton]}
+              onPress={onClose}
+              disabled={loading}
+            >
+              <Text style={styles.cancelButtonText}>Annuler</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.button, styles.createButton]}
+              onPress={handleCreate}
+              disabled={loading || !cardName.trim()}
+            >
+              <Text style={styles.createButtonText}>
+                {loading ? 'Creation...' : 'Create'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+};
+
+CreateCardModal.propTypes = {
+  visible: PropTypes.bool.isRequired,
+  listId: PropTypes.string.isRequired,
+  onClose: PropTypes.func.isRequired,
+  onCreate: PropTypes.func.isRequired,
+};
+
+const styles = StyleSheet.create({
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    paddingBottom: 40,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#172B4D',
+    marginBottom: 20,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#DFE1E6',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 14,
+    marginBottom: 16,
+  },
+  textArea: {
+    height: 100,
+    textAlignVertical: 'top',
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  button: {
+    flex: 1,
+    padding: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  cancelButton: {
+    backgroundColor: '#F4F5F7',
+  },
+  cancelButtonText: {
+    color: '#5E6C84',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  createButton: {
+    backgroundColor: '#0079BF',
+  },
+  createButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+});
+
+export default CreateCardModal;
+
+*******************src/features/cards/components/CCreateCardModal.jsx
+
+
+import React from 'react';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { ActivityIndicator, View } from 'react-native';
+
+// Auth
+import LoginScreen from '../features/auth/screens/LoginScreen';
+
+// Main App
+import MainTabNavigator from './MainTabNavigator';
+
+// Store
+import { useAuthStore } from '../store/authStore';
+
+const Stack = createNativeStackNavigator();
+
+export default function AppNavigator() {
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isLoading = useAuthStore((state) => state.isLoading);
+
+  // Afficher un loader pendant l'initialisation
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#0079BF" />
+      </View>
+    );
+  }
+
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      {!isAuthenticated ? (
+        // Stack d'authentification
+        <Stack.Screen name="Login" component={LoginScreen} />
+      ) : (
+        // Stack principal de l'application
+        <Stack.Screen name="Main" component={MainTabNavigator} />
+      )}
+    </Stack.Navigator>
+  );
+}
+
+
+**************src/navigation/AppNavigator.js
+
+import React from 'react';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { Ionicons } from '@expo/vector-icons';
+
+// Workspace Screens
+import WorkspacesListScreen from '../features/workspaces/screens/WorkspacesListScreen';
+import WorkspaceDetailScreen from '../features/workspaces/screens/WorkspaceDetailScreen';
+
+// Board Screens
+import BoardListScreen from '../features/boards/screens/BoardListScreen';
+import BoardDetailScreen from '../features/boards/screens/BoardDetailScreen';
+
+// Card Screens
+import CardsListScreen from '../features/cards/screens/CardListScreen';
+import CardDetailScreen from '../features/cards/screens/CardDetailScreen';
+
+// Profile Screen
+import ProfileScreen from '../features/profile/screens/ProfileScreen';
+
+const Tab = createBottomTabNavigator();
+const WorkspaceStack = createNativeStackNavigator();
+const BoardStack = createNativeStackNavigator();
+const ProfileStack = createNativeStackNavigator();
+
+// Workspace Stack Navigator
+function WorkspaceStackNavigator() {
+  return (
+    <WorkspaceStack.Navigator>
+      <WorkspaceStack.Screen
+        name="WorkspacesList"
+        component={WorkspacesListScreen}
+        options={{ title: 'Workspaces' }}
+      />
+      <WorkspaceStack.Screen
+        name="WorkspaceDetail"
+        component={WorkspaceDetailScreen}
+        options={{ title: 'Détails Workspace' }}
+      />
+      <WorkspaceStack.Screen
+        name="BoardDetail"
+        component={BoardDetailScreen}
+        options={{ title: 'Détails Board' }}
+      />
+      <WorkspaceStack.Screen
+        name="CardsList"
+        component={CardsListScreen}
+        options={{ title: 'Cartes' }}
+      />
+      <WorkspaceStack.Screen
+        name="CardDetail"
+        component={CardDetailScreen}
+        options={{ title: 'Détails Carte' }}
+      />
+    </WorkspaceStack.Navigator>
+  );
+}
+
+// Board Stack Navigator
+function BoardStackNavigator() {
+  return (
+    <BoardStack.Navigator>
+      <BoardStack.Screen
+        name="BoardsList"
+        component={BoardListScreen}
+        options={{ title: 'Boards' }}
+      />
+      <BoardStack.Screen
+        name="BoardDetail"
+        component={BoardDetailScreen}
+        options={{ title: 'Détails Board' }}
+      />
+      <BoardStack.Screen
+        name="CardsList"
+        component={CardsListScreen}
+        options={{ title: 'Cartes' }}
+      />
+      <BoardStack.Screen
+        name="CardDetail"
+        component={CardDetailScreen}
+        options={{ title: 'Détails Carte' }}
+      />
+    </BoardStack.Navigator>
+  );
+}
+
+// Profile Stack Navigator
+function ProfileStackNavigator() {
+  return (
+    <ProfileStack.Navigator>
+      <ProfileStack.Screen
+        name="ProfileMain"
+        component={ProfileScreen}
+        options={{ title: 'Profil' }}
+      />
+    </ProfileStack.Navigator>
+  );
+}
+
+// Main Tab Navigator
+export default function MainTabNavigator() {
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        tabBarIcon: ({ focused, color, size }) => {
+          let iconName;
+
+          if (route.name === 'WorkspacesTab') {
+            iconName = focused ? 'briefcase' : 'briefcase-outline';
+          } else if (route.name === 'BoardsTab') {
+            iconName = focused ? 'grid' : 'grid-outline';
+          } else if (route.name === 'ProfileTab') {
+            iconName = focused ? 'person' : 'person-outline';
+          }
+
+          return <Ionicons name={iconName} size={size} color={color} />;
+        },
+        tabBarActiveTintColor: '#0079BF',
+        tabBarInactiveTintColor: 'gray',
+        headerShown: false,
+      })}
+    >
+      <Tab.Screen
+        name="WorkspacesTab"
+        component={WorkspaceStackNavigator}
+        options={{ title: 'Workspaces' }}
+      />
+      <Tab.Screen
+        name="BoardsTab"
+        component={BoardStackNavigator}
+        options={{ title: 'Boards' }}
+      />
+      <Tab.Screen
+        name="ProfileTab"
+        component={ProfileStackNavigator}
+        options={{ title: 'Profil' }}
+      />
+    </Tab.Navigator>
+  );
+}
+
+*************src/navigation/MainTabNavigator.jsx
+
+
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { setupInterceptors } from '../api/trello/interceptors';
+
+// Initialiser les intercepteurs au démarrage
+setupInterceptors();
+
+/**
+ * Store d'authentification avec persistence
+ */
+export const useAuthStore = create(
+  persist(
+    (set, get) => ({
+      // État
+      token: null,
+      isAuthenticated: false,
+      isLoading: true,
+      user: null,
+
+      // Actions
+      setAuth: async (token, user = null) => {
+        try {
+          set({ token, isAuthenticated: true, user, isLoading: false });
+          return true;
+        } catch (error) {
+          console.error('Error setting auth:', error);
+          set({ isLoading: false });
+          return false;
+        }
+      },
+
+      clearAuth: async () => {
+        try {
+          set({ token: null, isAuthenticated: false, user: null, isLoading: false });
+          return true;
+        } catch (error) {
+          console.error('Error clearing auth:', error);
+          return false;
+        }
+      },
+
+      initializeAuth: () => {
+        set({ isLoading: false });
+      },
+    }),
+    {
+      name: 'trelltech-auth-storage',
+      storage: {
+        getItem: async (name) => {
+          const value = await AsyncStorage.getItem(name);
+          return value ? JSON.parse(value) : null;
+        },
+        setItem: async (name, value) => {
+          await AsyncStorage.setItem(name, JSON.stringify(value));
+        },
+        removeItem: async (name) => {
+          await AsyncStorage.removeItem(name);
+        },
+      },
+    }
+  )
+);
+
+/**
+ * Helpers pour les intercepteurs
+ */
+export const getAuthToken = () => useAuthStore.getState().token;
+export const clearAuthToken = () => useAuthStore.getState().clearAuth();
+
+
+****************src/store/authStore.js
+
+
+// import { StatusBar } from 'expo-status-bar';
+// import { StyleSheet, Text, View } from 'react-native';
+
+// export default function App() {
+//   return (
+//     <View style={styles.container}>
+//       <Text>Open up App.js to start working on your app!</Text>
+//       <StatusBar style="auto" />
+//     </View>
+//   );
+// }
+
+// const styles = StyleSheet.create({
+//   container: {
+//     flex: 1,
+//     backgroundColor: '#fff',
+//     alignItems: 'center',
+//     justifyContent: 'center',
+//   },
+// });
+
+
+import { StatusBar } from 'expo-status-bar';
+import { useEffect } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { NavigationContainer } from '@react-navigation/native';
+import { useAuthStore } from './src/store/authStore';
+import AppNavigator from './src/navigation/AppNavigator';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 2,                // Réessayer 2 fois en cas d'erreur
+      staleTime: 30000,        // Les données sont fraîches pendant 30 secondes
+      cacheTime: 5 * 60 * 1000, // Garder en cache 5 minutes
+      refetchOnWindowFocus: false, // Ne pas refetch au focus
+    },
+    mutations: {
+      retry: 1, // Réessayer 1 fois pour les mutations
+    },
+  },
+});
+
+export default function App() {
+  const initializeAuth = useAuthStore(state => state.initializeAuth);
+
+  useEffect(() => {
+    // Initialiser l'authentification au démarrage
+    initializeAuth();
+  }, []);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <NavigationContainer>
+        <AppNavigator />
+        <StatusBar style="auto" />
+      </NavigationContainer>
+    </QueryClientProvider>
+  );
+}
+
+
+*******************App.js
+
