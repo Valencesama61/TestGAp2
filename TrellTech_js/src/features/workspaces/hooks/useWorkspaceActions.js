@@ -54,3 +54,60 @@ export const useDeleteWorkspace = () => {
     },
   });
 };
+
+/**
+ * Hook to invite a member to a workspace
+ */
+export const useInviteMemberToWorkspace = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ workspaceId, email, type, fullName }) =>
+      workspaceService.inviteMemberToWorkspace(workspaceId, email, type, fullName),
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries(['workspace', variables.workspaceId, 'members']);
+      queryClient.invalidateQueries(['workspace', variables.workspaceId]);
+    },
+    onError: (error) => {
+      console.error('Error inviting member:', error);
+    },
+  });
+};
+
+/**
+ * Hook to remove a member from a workspace
+ */
+export const useRemoveMemberFromWorkspace = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ workspaceId, memberId }) =>
+      workspaceService.removeMemberFromWorkspace(workspaceId, memberId),
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries(['workspace', variables.workspaceId, 'members']);
+      queryClient.invalidateQueries(['workspace', variables.workspaceId]);
+    },
+    onError: (error) => {
+      console.error('Error removing member:', error);
+    },
+  });
+};
+
+/**
+ * Hook to update a member's role in a workspace
+ */
+export const useUpdateMemberRole = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ workspaceId, memberId, type }) =>
+      workspaceService.updateMemberRole(workspaceId, memberId, type),
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries(['workspace', variables.workspaceId, 'members']);
+      queryClient.invalidateQueries(['workspace', variables.workspaceId]);
+    },
+    onError: (error) => {
+      console.error('Error updating member role:', error);
+    },
+  });
+};

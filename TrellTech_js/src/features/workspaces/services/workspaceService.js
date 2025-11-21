@@ -1,5 +1,5 @@
 import trelloClient from '../../../api/trello/client';
-
+import { WORKSPACES_ENDPOINTS } from '../../../api/trello/endpoints';
 
 const workspaceService = {
   /**
@@ -109,6 +109,101 @@ const workspaceService = {
       await trelloClient.delete(`/organizations/${workspaceId}`);
     } catch (error) {
       console.error('Error deleting workspace:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get members of a workspace
+   */
+  getWorkspaceMembers: async (workspaceId) => {
+    try {
+      const response = await trelloClient.get(WORKSPACES_ENDPOINTS.getMembers(workspaceId), {
+        params: {
+          fields: 'id,fullName,username,avatarUrl,initials',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error retrieving workspace members:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Invite a member to a workspace
+   * @param {string} workspaceId - ID du workspace
+   * @param {string} email - Email du membre à inviter
+   * @param {string} type - Type de membre: 'normal' ou 'admin' (défaut: 'normal')
+   * @param {string} fullName - Nom complet (optionnel)
+   */
+  inviteMemberToWorkspace: async (workspaceId, email, type = 'normal', fullName = '') => {
+    try {
+      console.log('Inviting member to workspace:', { workspaceId, email, type });
+
+      const response = await trelloClient.put(
+        WORKSPACES_ENDPOINTS.inviteMember(workspaceId),
+        {},  // Body vide
+        {
+          params: {
+            email,
+            type,
+            ...(fullName && { fullName }),
+          },
+          headers: { 'Content-Type': 'application/json' }
+        }
+      );
+
+      console.log('Member invited successfully');
+      return response.data;
+    } catch (error) {
+      console.error('Error inviting member to workspace:', error);
+      console.error('Error details:', error.response?.data);
+      throw error;
+    }
+  },
+
+  /**
+   * Remove a member from a workspace
+   * @param {string} workspaceId - ID du workspace
+   * @param {string} memberId - ID du membre à retirer
+   */
+  removeMemberFromWorkspace: async (workspaceId, memberId) => {
+    try {
+      console.log('Removing member from workspace:', { workspaceId, memberId });
+      await trelloClient.delete(WORKSPACES_ENDPOINTS.removeMember(workspaceId, memberId));
+      console.log('Member removed successfully');
+    } catch (error) {
+      console.error('Error removing member from workspace:', error);
+      console.error('Error details:', error.response?.data);
+      throw error;
+    }
+  },
+
+  /**
+   * Update a member's role in a workspace
+   * @param {string} workspaceId - ID du workspace
+   * @param {string} memberId - ID du membre
+   * @param {string} type - Nouveau type: 'normal' ou 'admin'
+   */
+  updateMemberRole: async (workspaceId, memberId, type) => {
+    try {
+      console.log('Updating member role:', { workspaceId, memberId, type });
+
+      const response = await trelloClient.put(
+        WORKSPACES_ENDPOINTS.updateMemberRole(workspaceId, memberId),
+        {},  // Body vide
+        {
+          params: { type },
+          headers: { 'Content-Type': 'application/json' }
+        }
+      );
+
+      console.log('Member role updated successfully');
+      return response.data;
+    } catch (error) {
+      console.error('Error updating member role:', error);
+      console.error('Error details:', error.response?.data);
       throw error;
     }
   },

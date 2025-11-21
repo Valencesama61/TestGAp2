@@ -7,56 +7,6 @@ import { CARDS_ENDPOINTS } from '../../../api/trello/endpoints';
 const cardService = {
 
   /**
-   * Assigner un membre à une carte
-   */
-  addMemberToCard: async (cardId, memberId) => {
-  try {
-    console.log('Assignation du membre (alternative):', { cardId, memberId });
-    
-    const payload = new URLSearchParams();
-    payload.append('value', memberId);
-
-    const response = await trelloClient.post(`${CARDS_ENDPOINTS.addMember(cardId)}?${payload.toString()}`,{
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-    });
-    console.log(' Membre assigné avec succès (alternative)');
-    return response.data;
-  } catch (error) {
-    console.error(' Error adding member to card (alternative):', error);
-    console.error('Détails:', error.response?.data);
-    throw error;
-  }
-},
-
-  /**
-   * Retirer un membre d'une carte 
-   */
-  removeMemberFromCard: async (cardId, memberId) => {
-    try {
-      await trelloClient.delete(CARDS_ENDPOINTS.removeMember(cardId, memberId));
-    } catch (error) {
-      console.error('Error removing member from card:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Récupérer les membres d'une carte
-   */
-  getCardMembers: async (cardId) => {
-    try {
-      const response = await trelloClient.get(CARDS_ENDPOINTS.getMembers(cardId), {
-        params: {
-          fields: 'id,fullName,username,avatarUrl,initials',
-        },
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Error retrieving card members:', error);
-      throw error;
-    }
-  },
-  /**
    * Récupérer toutes les cartes d'une liste
    * @param {string} listId - ID de la liste
    * @returns {Promise<Array>} Liste des cartes
@@ -210,14 +160,23 @@ const cardService = {
    */
   addMemberToCard: async (cardId, memberId) => {
     try {
+      console.log('Adding member to card:', { cardId, memberId });
+
+      // L'API Trello attend le paramètre 'value' comme query parameter
       const response = await trelloClient.post(
         CARDS_ENDPOINTS.addMember(cardId),
-        null,
-        { params: { value: memberId } }
+        {},  // Body vide
+        {
+          params: { value: memberId },
+          headers: { 'Content-Type': 'application/json' }
+        }
       );
+
+      console.log('Member added successfully');
       return response.data;
     } catch (error) {
       console.error('Error adding member:', error);
+      console.error('Error details:', error.response?.data);
       throw error;
     }
   },
@@ -230,9 +189,12 @@ const cardService = {
    */
   removeMemberFromCard: async (cardId, memberId) => {
     try {
+      console.log('Removing member from card:', { cardId, memberId });
       await trelloClient.delete(CARDS_ENDPOINTS.removeMember(cardId, memberId));
+      console.log('Member removed successfully');
     } catch (error) {
       console.error('Error removing member:', error);
+      console.error('Error details:', error.response?.data);
       throw error;
     }
   },
@@ -244,10 +206,15 @@ const cardService = {
    */
   getCardMembers: async (cardId) => {
     try {
-      const response = await trelloClient.get(CARDS_ENDPOINTS.getMembers(cardId));
+      const response = await trelloClient.get(CARDS_ENDPOINTS.getMembers(cardId), {
+        params: {
+          fields: 'id,fullName,username,avatarUrl,initials',
+        },
+      });
       return response.data;
     } catch (error) {
       console.error('Error retrieving members:', error);
+      console.error('Error details:', error.response?.data);
       throw error;
     }
   },
@@ -260,14 +227,20 @@ const cardService = {
    */
   addLabelToCard: async (cardId, labelId) => {
     try {
+      console.log('Adding label to card:', { cardId, labelId });
       const response = await trelloClient.post(
         CARDS_ENDPOINTS.addLabel(cardId),
-        null,
-        { params: { value: labelId } }
+        {},  // Body vide
+        {
+          params: { value: labelId },
+          headers: { 'Content-Type': 'application/json' }
+        }
       );
+      console.log('Label added successfully');
       return response.data;
     } catch (error) {
       console.error('Error adding label:', error);
+      console.error('Error details:', error.response?.data);
       throw error;
     }
   },
@@ -280,9 +253,12 @@ const cardService = {
    */
   removeLabelFromCard: async (cardId, labelId) => {
     try {
+      console.log('Removing label from card:', { cardId, labelId });
       await trelloClient.delete(CARDS_ENDPOINTS.removeLabel(cardId, labelId));
+      console.log('Label removed successfully');
     } catch (error) {
       console.error('Error removing label:', error);
+      console.error('Error details:', error.response?.data);
       throw error;
     }
   },

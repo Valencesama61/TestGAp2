@@ -5,18 +5,27 @@
 export const WORKSPACES_ENDPOINTS = {
 
   getAll: '/members/me/organizations',
-  
+
   getById: (id) => `/organizations/${id}`,
-  
+
   create: '/organizations',
-  
+
   update: (id) => `/organizations/${id}`,
-  
+
   delete: (id) => `/organizations/${id}`,
-  
+
   getBoards: (id) => `/organizations/${id}/boards`,
-  
+
   getMembers: (id) => `/organizations/${id}/members`,
+
+  // Inviter un membre (email requis)
+  inviteMember: (id) => `/organizations/${id}/members`,
+
+  // Retirer un membre
+  removeMember: (orgId, memberId) => `/organizations/${orgId}/members/${memberId}`,
+
+  // Mettre à jour le rôle d'un membre
+  updateMemberRole: (orgId, memberId) => `/organizations/${orgId}/members/${memberId}`,
 };
 
 /**
