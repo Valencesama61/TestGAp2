@@ -16,8 +16,7 @@ const Stack = createNativeStackNavigator();
 
 export default function AppNavigator() {
   const [showLoading, setShowLoading] = useState(true);
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const isLoading = useAuthStore((state) => state.isLoading);
+  const { isAuthenticated, isLoading } = useAuthStore();
 
   // Display a loader while initialisation
   if (showLoading) {

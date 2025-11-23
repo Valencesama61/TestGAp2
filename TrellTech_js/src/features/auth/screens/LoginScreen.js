@@ -16,7 +16,7 @@ import * as WebBrowser from 'expo-web-browser';
 export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [manualToken, setManualToken] = useState("");
-  const setAuth = useAuthStore((state) => state.setAuth);
+  const { setAuth } = useAuthStore();
 
   const handleTrelloLogin = async () => {
     setLoading(true);

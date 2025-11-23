@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { NavigationContainer } from '@react-navigation/native';
 import AppNavigator from './src/navigation/AppNavigator';
-import { useAuthStore } from './src/store/authStore';
+import { AuthProvider, useAuthStore } from './src/store/authStore';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -18,8 +18,8 @@ const queryClient = new QueryClient({
   },
 });
 
-export default function App() {
-  const initializeAuth = useAuthStore((state) => state.initializeAuth);
+function AppContent() {
+  const { initializeAuth } = useAuthStore();
 
   useEffect(() => {
     initializeAuth(); 
@@ -31,5 +31,13 @@ export default function App() {
         <AppNavigator />
       </NavigationContainer>
     </QueryClientProvider>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }

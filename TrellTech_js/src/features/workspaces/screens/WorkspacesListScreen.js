@@ -9,6 +9,7 @@ import {
   Alert,
   Modal,
   TextInput,
+  Dimensions,
 } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import trelloClient from '../../../api/trello/client';
@@ -20,7 +21,7 @@ import {
   useUpdateWorkspace,
   useDeleteWorkspace,
 } from '../hooks/useWorkspaceActions';
-
+const screenWidth = Dimensions.get('screen').width;
 const WorkspacesListScreen = ({ navigation }) => {
   // === FETCH WORKSPACES ===
   const { data: workspaces, isLoading, error } = useQuery({
@@ -212,7 +213,11 @@ const WorkspacesListScreen = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F4F5F7' },
-
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   header: {
     backgroundColor: '#fff',
     padding: 16,
@@ -271,7 +276,7 @@ const styles = StyleSheet.create({
   modalContent: {
     backgroundColor: '#fff',
     padding: 20,
-    width: '80%',
+    width: screenWidth < 760 ? '80%' : '50%',
     borderRadius: 10,
   },
   modalTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 10 },

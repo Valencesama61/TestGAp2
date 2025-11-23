@@ -1,4 +1,3 @@
-// components/AssignMemberModal.jsx - CORRECTION DES IMPORTS
 import React, { useState } from 'react';
 import {
   Modal,
@@ -11,24 +10,22 @@ import {
   TextInput,
 } from 'react-native';
 
-// Import correct de tous les hooks
 import { 
   useBoardMembers, 
   useCardMembers, 
   useAssignMember, 
   useRemoveMember 
-} from '../hooks/useCards'; // Assurez-vous que le chemin est correct
+} from '../hooks/useCards'; 
 
 const AssignMemberModal = ({ visible, card, boardId, onClose }) => {
   const [searchQuery, setSearchQuery] = useState('');
   
-  // Hooks pour les membres - maintenant ils sont correctement exportés
   const { data: boardMembers, isLoading: isLoadingMembers, error: boardMembersError } = useBoardMembers(boardId);
   const { data: cardMembers, isLoading: isLoadingCardMembers, error: cardMembersError } = useCardMembers(card?.id);
   const assignMemberMutation = useAssignMember();
   const removeMemberMutation = useRemoveMember();
 
-  // Debug: Vérifiez que les données sont bien récupérées
+  // Debug: Pour vérifier que les données sont bien récupérées
   console.log('Board Members:', boardMembers);
   console.log('Card Members:', cardMembers);
   console.log('Board Members Error:', boardMembersError);
@@ -69,9 +66,9 @@ const AssignMemberModal = ({ visible, card, boardId, onClose }) => {
       <Modal visible={visible} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.errorText}>Carte non disponible</Text>
+            <Text style={styles.errorText}>Card not available</Text>
             <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-              <Text style={styles.closeButtonText}>Fermer</Text>
+              <Text style={styles.closeButtonText}>Close</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -89,13 +86,13 @@ const AssignMemberModal = ({ visible, card, boardId, onClose }) => {
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
           <Text style={styles.modalTitle}>
-            Assigner des membres à: {card.name}
+           Assign members to: {card.name}
           </Text>
 
           {/* Barre de recherche */}
           <TextInput
             style={styles.searchInput}
-            placeholder="Rechercher un membre..."
+            placeholder="Search a member..."
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
@@ -103,7 +100,7 @@ const AssignMemberModal = ({ visible, card, boardId, onClose }) => {
           {/* Gestion des erreurs */}
           {boardMembersError && (
             <Text style={styles.errorText}>
-              Erreur lors du chargement des membres: {boardMembersError.message}
+              Error loading members: {boardMembersError.message}
             </Text>
           )}
 
@@ -111,7 +108,7 @@ const AssignMemberModal = ({ visible, card, boardId, onClose }) => {
           {isLoadingMembers ? (
             <View style={styles.centerContainer}>
               <ActivityIndicator size="large" color="#0079BF" />
-              <Text style={styles.loadingText}>Chargement des membres...</Text>
+              <Text style={styles.loadingText}>Loading Members...</Text>
             </View>
           ) : (
             <FlatList
@@ -137,7 +134,7 @@ const AssignMemberModal = ({ visible, card, boardId, onClose }) => {
                   {/* Infos du membre */}
                   <View style={styles.memberInfo}>
                     <Text style={styles.memberName}>
-                      {item.fullName || 'Utilisateur sans nom'}
+                      {item.fullName || 'Unnamed user'}
                     </Text>
                     <Text style={styles.memberUsername}>
                       @{item.username || 'unknown'}
@@ -148,10 +145,10 @@ const AssignMemberModal = ({ visible, card, boardId, onClose }) => {
                   <View style={styles.memberStatus}>
                     {isMemberAssigned(item.id) ? (
                       <View style={styles.assignedBadge}>
-                        <Text style={styles.assignedText}>Assigné</Text>
+                        <Text style={styles.assignedText}>Assigned</Text>
                       </View>
                     ) : (
-                      <Text style={styles.assignText}>Assigner</Text>
+                      <Text style={styles.assignText}>Assign</Text>
                     )}
                   </View>
 
@@ -163,7 +160,7 @@ const AssignMemberModal = ({ visible, card, boardId, onClose }) => {
               )}
               ListEmptyComponent={
                 <Text style={styles.emptyText}>
-                  {searchQuery ? 'Aucun membre trouvé pour cette recherche' : 'Aucun membre disponible'}
+                  {searchQuery ? 'No members were found for this search.' : 'No members available'}
                 </Text>
               }
             />
@@ -174,7 +171,7 @@ const AssignMemberModal = ({ visible, card, boardId, onClose }) => {
             style={styles.closeButton}
             onPress={onClose}
           >
-            <Text style={styles.closeButtonText}>Fermer</Text>
+            <Text style={styles.closeButtonText}>Close</Text>
           </TouchableOpacity>
         </View>
       </View>

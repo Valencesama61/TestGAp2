@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import trelloClient from '../../api/trello/client';
-import { useAuthStore } from '../../app/store/authStore';
+import { useAuthStore } from '../../store/authStore';
 
 /**
  * Hook pour tester la santé de l'API et la configuration

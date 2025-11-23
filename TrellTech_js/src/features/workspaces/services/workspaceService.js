@@ -1,5 +1,5 @@
 import trelloClient from '../../../api/trello/client';
-import { WORKSPACES_ENDPOINTS } from '../../../api/trello/endpoints';
+
 
 const workspaceService = {
   /**
@@ -114,13 +114,47 @@ const workspaceService = {
   },
 
   /**
-   * Get members of a workspace
+   * Inviter un membre à un workspace
+   * @param {string} workspaceId - ID du workspace
+   * @param {string} email - Email du membre à inviter
+   * @param {string} fullName - Nom complet du membre (optionnel)
+   * @param {string} role - Rôle: 'admin', 'normal', 'observer' (défaut: 'normal')
+   * @returns {Promise<Object>} Résultat de l'invitation
+   */
+  inviteMemberToWorkspace: async (workspaceId, email, fullName = '', role = 'normal') => {
+    try {
+      const payload = new URLSearchParams();
+      payload.append('email', email);
+      if (fullName) payload.append('fullName', fullName);
+      payload.append('type', role); 
+
+      const response = await trelloClient.post(
+        `/organizations/${workspaceId}/memberships`,
+        payload.toString(),
+        {
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        }
+      );
+      
+      console.log('Membre invité avec succès:', { email, role });
+      return response.data;
+    } catch (error) {
+      console.error('Error inviting member to workspace:', error);
+      console.error('Détails:', error.response?.data);
+      throw error;
+    }
+  },
+
+   /**
+   * Récupérer tous les membres d'un workspace
+   * @param {string} workspaceId - ID du workspace
+   * @returns {Promise<Array>} Liste des membres
    */
   getWorkspaceMembers: async (workspaceId) => {
     try {
-      const response = await trelloClient.get(WORKSPACES_ENDPOINTS.getMembers(workspaceId), {
+      const response = await trelloClient.get(`/organizations/${workspaceId}/members`, {
         params: {
-          fields: 'id,fullName,username,avatarUrl,initials',
+          fields: 'id,fullName,username,email,avatarUrl,initials,memberType',
         },
       });
       return response.data;
@@ -131,79 +165,64 @@ const workspaceService = {
   },
 
   /**
-   * Invite a member to a workspace
-   * @param {string} workspaceId - ID du workspace
-   * @param {string} email - Email du membre à inviter
-   * @param {string} type - Type de membre: 'normal' ou 'admin' (défaut: 'normal')
-   * @param {string} fullName - Nom complet (optionnel)
-   */
-  inviteMemberToWorkspace: async (workspaceId, email, type = 'normal', fullName = '') => {
-    try {
-      console.log('Inviting member to workspace:', { workspaceId, email, type });
-
-      const response = await trelloClient.put(
-        WORKSPACES_ENDPOINTS.inviteMember(workspaceId),
-        {},  // Body vide
-        {
-          params: {
-            email,
-            type,
-            ...(fullName && { fullName }),
-          },
-          headers: { 'Content-Type': 'application/json' }
-        }
-      );
-
-      console.log('Member invited successfully');
-      return response.data;
-    } catch (error) {
-      console.error('Error inviting member to workspace:', error);
-      console.error('Error details:', error.response?.data);
-      throw error;
-    }
-  },
-
-  /**
-   * Remove a member from a workspace
-   * @param {string} workspaceId - ID du workspace
-   * @param {string} memberId - ID du membre à retirer
-   */
-  removeMemberFromWorkspace: async (workspaceId, memberId) => {
-    try {
-      console.log('Removing member from workspace:', { workspaceId, memberId });
-      await trelloClient.delete(WORKSPACES_ENDPOINTS.removeMember(workspaceId, memberId));
-      console.log('Member removed successfully');
-    } catch (error) {
-      console.error('Error removing member from workspace:', error);
-      console.error('Error details:', error.response?.data);
-      throw error;
-    }
-  },
-
-  /**
-   * Update a member's role in a workspace
+   * Mettre à jour le rôle d'un membre dans un workspace
    * @param {string} workspaceId - ID du workspace
    * @param {string} memberId - ID du membre
-   * @param {string} type - Nouveau type: 'normal' ou 'admin'
+   * @param {string} role - Nouveau rôle: 'admin', 'normal', 'observer'
+   * @returns {Promise<Object>} Résultat de la mise à jour
    */
-  updateMemberRole: async (workspaceId, memberId, type) => {
+  updateMemberRole: async (workspaceId, memberId, role) => {
     try {
-      console.log('Updating member role:', { workspaceId, memberId, type });
+      const payload = new URLSearchParams();
+      payload.append('type', role);
 
       const response = await trelloClient.put(
-        WORKSPACES_ENDPOINTS.updateMemberRole(workspaceId, memberId),
-        {},  // Body vide
+        `/organizations/${workspaceId}/members/${memberId}`,
+        payload.toString(),
         {
-          params: { type },
-          headers: { 'Content-Type': 'application/json' }
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         }
       );
-
-      console.log('Member role updated successfully');
+      
+      console.log('Rôle mis à jour:', { memberId, role });
       return response.data;
     } catch (error) {
       console.error('Error updating member role:', error);
-      console.error('Error details:', error.response?.data);
+      throw error;
+    }
+  },
+
+  /**
+   * Retirer un membre d'un workspace
+   * @param {string} workspaceId - ID du workspace
+   * @param {string} memberId - ID du membre
+   * @returns {Promise<void>}
+   */
+  removeMemberFromWorkspace: async (workspaceId, memberId) => {
+    try {
+      await trelloClient.delete(`/organizations/${workspaceId}/members/${memberId}`);
+      console.log('Membre retiré du workspace:', memberId);
+    } catch (error) {
+      console.error('Error removing member from workspace:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Récupérer les invitations en attente d'un workspace
+   * @param {string} workspaceId - ID du workspace
+   * @returns {Promise<Array>} Liste des invitations
+   */
+  getPendingInvitations: async (workspaceId) => {
+    try {
+      const response = await trelloClient.get(`/organizations/${workspaceId}/memberships`, {
+        params: {
+          filter: 'invited',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error retrieving pending invitations:', error);
       throw error;
     }
   },

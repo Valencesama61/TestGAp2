@@ -18,7 +18,7 @@ const CreateCardModal = ({ visible, listId, onClose, onCreate }) => {
 
   const handleCreate = async () => {
     if (!cardName.trim()) {
-      alert('Le nom de la carte est requis');
+      alert('The card name is required');
       return;
     }
 
@@ -30,12 +30,11 @@ const CreateCardModal = ({ visible, listId, onClose, onCreate }) => {
         idList: listId,
       });
       
-      // Réinitialiser et fermer
       setCardName('');
       setCardDescription('');
       onClose();
     } catch (error) {
-      alert('Erreur lors de la création de la carte');
+      alert('Error creating map');
     } finally {
       setLoading(false);
     }

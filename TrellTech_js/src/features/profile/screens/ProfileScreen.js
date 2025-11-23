@@ -36,6 +36,19 @@ const CustomImage = ({ source, style, children, ...props }) => {
 };
 
 const ProfileScreen = () => {
+  // const { clearAuth, user } = useAuthStore();
+
+  // const { data: profile, isLoading } = useQuery({
+  //   queryKey: ['profile'],
+  //   queryFn: async () => {
+  //     const response = await trelloClient.get(MEMBERS_ENDPOINTS.getMe, {
+  //       params: {
+  //         fields: 'fullName,username,email,bio,url,avatarUrl,initials',
+  //       },
+  //     });
+  //     return response.data;
+  //   },
+  // });
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const { data: profile, isLoading, error } = useProfile();
   const updateProfileMutation = useUpdateProfile();

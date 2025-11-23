@@ -33,15 +33,3 @@ export const useWorkspaceBoards = (workspaceId) => {
     enabled: !!workspaceId,
   });
 };
-
-/**
- * Hook to get members of a workspace
- */
-export const useWorkspaceMembers = (workspaceId) => {
-  return useQuery({
-    queryKey: ['workspace', workspaceId, 'members'],
-    queryFn: () => workspaceService.getWorkspaceMembers(workspaceId),
-    enabled: !!workspaceId,
-    staleTime: 30000, // 30 seconds
-  });
-};

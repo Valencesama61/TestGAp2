@@ -2,7 +2,6 @@ import React from 'react';
 import { FlatList, View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import PropTypes from 'prop-types';
 import CardItem from './CardsItem';
-//import CardItem from './CardItem';
 
 const CardList = ({ cards, loading, error, onCardPress, onCardLongPress, onRefresh }) => {
   if (loading) {

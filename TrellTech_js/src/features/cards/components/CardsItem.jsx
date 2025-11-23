@@ -2,7 +2,6 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import PropTypes from 'prop-types';
 import { CardSchema } from '../../../api/schema';
-//import { CardSchema } from '../../../api/trello/schemas';
 
 const CardItem = ({ card, onPress, onLongPress }) => {
   const hasMembers = card.idMembers && card.idMembers.length > 0;

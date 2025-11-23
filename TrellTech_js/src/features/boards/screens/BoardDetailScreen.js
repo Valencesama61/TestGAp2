@@ -9,10 +9,11 @@ import {
   Alert,
   Modal,
   TextInput,
+  Dimensions,
 } from 'react-native';
 import { useBoardLists } from '../hooks/useBoards';
 import { useCreateList, useUpdateList, useDeleteList } from '../../lists/hooks/useListActions';
-
+const screenWidth = Dimensions.get('screen').width;
 const BoardDetailScreen = ({ route, navigation }) => {
   const { boardId, boardName } = route.params;
   
@@ -281,7 +282,7 @@ const styles = StyleSheet.create({
   modalContent: {
     backgroundColor: '#fff',
     padding: 20,
-    width: '80%',
+    width: screenWidth < 760 ? '80%' : '50%',
     borderRadius: 10,
   },
   modalTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 10 },

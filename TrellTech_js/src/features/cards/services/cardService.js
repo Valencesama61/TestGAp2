@@ -84,7 +84,7 @@ const cardService = {
     });
     return response.data;
   } catch (error) {
-    console.error('Error creating card:', error); // Correction du message
+    console.error('Error creating card:', error); 
     throw error;
   }
 },
@@ -113,7 +113,7 @@ const cardService = {
     );
     return response.data;
   } catch (error) {
-    console.error('Error updating card:', error); // Correction du message
+    console.error('Error updating card:', error); 
     throw error;
   }
 },
@@ -161,11 +161,9 @@ const cardService = {
   addMemberToCard: async (cardId, memberId) => {
     try {
       console.log('Adding member to card:', { cardId, memberId });
-
-      // L'API Trello attend le paramètre 'value' comme query parameter
       const response = await trelloClient.post(
         CARDS_ENDPOINTS.addMember(cardId),
-        {},  // Body vide
+        {},
         {
           params: { value: memberId },
           headers: { 'Content-Type': 'application/json' }
@@ -230,7 +228,7 @@ const cardService = {
       console.log('Adding label to card:', { cardId, labelId });
       const response = await trelloClient.post(
         CARDS_ENDPOINTS.addLabel(cardId),
-        {},  // Body vide
+        {},
         {
           params: { value: labelId },
           headers: { 'Content-Type': 'application/json' }

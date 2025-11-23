@@ -1,89 +1,128 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { setupInterceptors } from '../api/trello/interceptors';
-AsyncStorage.removeItem("trelltech-auth-storage");
 
-setupInterceptors();
+const STORAGE_KEY = 'trelltech-auth-storage';
 
-export const useAuthStore = create(
-  persist(
-    (set, get) => ({
-      // State
-      token: null,
-      isAuthenticated: false,
-      isLoading: true,
-      user: null,
+// Clear old storage
+AsyncStorage.removeItem(STORAGE_KEY);
 
-      // Actions
-      setAuth: async (token, user = null) => {
-        try {
-          set({ token, isAuthenticated: true, user, isLoading: false });
-          return true;
-        } catch (error) {
-          console.error('Error setting auth:', error);
-          set({ isLoading: false });
-          return false;
+const AuthContext = createContext(null);
+
+// Global state for interceptors
+let globalAuthState = {
+  token: null,
+  isAuthenticated: false,
+  user: null,
+  isLoading: true,
+};
+
+export const AuthProvider = ({ children }) => {
+  const [state, setState] = useState(globalAuthState);
+
+  useEffect(() => {
+    // Initialize auth from storage
+    const initAuth = async () => {
+      try {
+        const stored = await AsyncStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          const data = JSON.parse(stored);
+          const newState = {
+            token: data.token || null,
+            isAuthenticated: data.token ? true : false,
+            user: data.user || null,
+            isLoading: false,
+          };
+          globalAuthState = newState;
+          setState(newState);
+        } else {
+          globalAuthState = { ...globalAuthState, isLoading: false };
+          setState(prev => ({ ...prev, isLoading: false }));
         }
-      },
+      } catch (error) {
+        console.error('Error loading auth:', error);
+        globalAuthState = { ...globalAuthState, isLoading: false };
+        setState(prev => ({ ...prev, isLoading: false }));
+      }
+    };
 
-      clearAuth: async () => {
-        try {
-          set({ token: null, isAuthenticated: false, user: null, isLoading: false });
-          return true;
-        } catch (error) {
-          console.error('Error clearing auth:', error);
-          return false;
-        }
-      },
+    initAuth();
+    setupInterceptors();
+  }, []);
 
-      initializeAuth: () => {
-        set({ isLoading: false });
-      },
-    }),
-    {
-      name: 'trelltech-auth-storage',
-      version: 2, // version for future migration
-
-
-
-migrate: (persistedState) => {
-  if (!persistedState?.state) return persistedState;
-
-  const s = persistedState.state;
-
-  return {
-    ...persistedState,
-    state: {
-      ...s,
-      isAuthenticated:
-        s.isAuthenticated === true || s.isAuthenticated === "true",
-      isLoading:
-        s.isLoading === true || s.isLoading === "true",
-    },
-  };
-},
-
-
-
-      storage: {
-        getItem: async (name) => {
-          const value = await AsyncStorage.getItem(name);
-          return value ? JSON.parse(value) : null;
-        },
-        setItem: async (name, value) => {
-          await AsyncStorage.setItem(name, JSON.stringify(value));
-        },
-        removeItem: async (name) => {
-          await AsyncStorage.removeItem(name);
-        },
-      },
+  const setAuth = async (token, user = null) => {
+    try {
+      const newState = {
+        token,
+        isAuthenticated: true,
+        user,
+        isLoading: false,
+      };
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({ token, user }));
+      globalAuthState = newState;
+      setState(newState);
+      return true;
+    } catch (error) {
+      console.error('Error setting auth:', error);
+      setState(prev => ({ ...prev, isLoading: false }));
+      return false;
     }
-  )
-);
+  };
+
+  const clearAuth = async () => {
+    try {
+      await AsyncStorage.removeItem(STORAGE_KEY);
+      const newState = {
+        token: null,
+        isAuthenticated: false,
+        user: null,
+        isLoading: false,
+      };
+      globalAuthState = newState;
+      setState(newState);
+      return true;
+    } catch (error) {
+      console.error('Error clearing auth:', error);
+      return false;
+    }
+  };
+
+  const initializeAuth = () => {
+    setState(prev => ({ ...prev, isLoading: false }));
+  };
+
+  const value = {
+    ...state,
+    setAuth,
+    clearAuth,
+    initializeAuth,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
+
+export const useAuthStore = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuthStore must be used within AuthProvider');
+  }
+  return context;
+};
 
 /**
  * Helpers for interceptors
  */
-export const getAuthToken = () => useAuthStore.getState().token;
-export const clearAuthToken = () => useAuthStore.getState().clearAuth();
+export const getAuthToken = () => globalAuthState.token;
+export const clearAuthToken = async () => {
+  try {
+    await AsyncStorage.removeItem(STORAGE_KEY);
+    globalAuthState = {
+      token: null,
+      isAuthenticated: false,
+      user: null,
+      isLoading: false,
+    };
+  } catch (error) {
+    console.error('Error clearing auth token:', error);
+  }
+};

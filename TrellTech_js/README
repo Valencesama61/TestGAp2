@@ -1,0 +1,95 @@
+# TrellTech
+
+Minimal React Native (Expo) app that demonstrates integration with the Trello REST API.
+
+Features included (minimal, demo-style):
+
+- CRUD Workspaces (Trello organizations)
+- CRUD Boards
+- CRUD Lists
+- CRUD Cards
+- Assign members to cards
+
+Architecture follows the layout under `src/` with a small API layer, services, hooks, stores and simple screens.
+
+### Requirements
+- Node.js, npm
+- Expo CLI
+- Trello API key & token (see documentation)
+
+### Setup
+
+1. Install dependencies
+
+```sh
+npm install
+```
+
+2. Configure Trello credentials
+
+Add your Trello API key and token to `.env` 
+
+```text
+EXPO_PUBLIC_TRELLO_API_BASE_URL = "https://api.trello.com/1"
+EXPO_PUBLIC_TRELLO_API_KEY="your_key_here"
+EXPO_PUBLIC_TOKEN="your_token_here"
+```
+
+3. Run the app
+
+```sh
+npx expo start
+   # or 
+npm start
+```
+
+### Project structure
+
+See the `src/` folder — key modules:
+
+- `src/api/trello` — axios client, endpoints and interceptors
+- `src/features/*` — features: workspaces, boards, lists, cards, profile. Each contains components, hooks, screens and services
+- `src/store` — zustand stores
+- `src/navigation` — simple navigator
+- `src/shared/hooks/useAPIHEALTH.js` — API health check
+
+### :Testing
+
+Unit tests are configured with Jest. Example tests mock the axios client.
+
+```sh
+npm test
+```
+
+Notes & conventions
+- The app uses query parameters `key` and `token` on every Trello request (Trello API requirement)
+- Services are thin wrappers that return Trello responses directly for clarity
+- Stores are kept simple with loading/error states and common operations
+
+Next steps (not implemented here):
+- Add more complete UI (drag and drop Kanban)
+- Add member management UI and selection when assigning members to cards
+- Add optimistic updates and better error handling UX
+
+---
+
+## How to Use
+
+1. Upon launching the app, log in via Trello using the **Login with Trello** button.
+2. After authentication, you will be able to see your workspaces and manage boards, lists, and cards.
+3. Create or manage your tasks and assign members directly through the app.
+4. Use the **Logout** button to disconnect your Trello account when you're done.
+
+
+## Contributing
+
+1. Fork the project.
+2. Create a new branch for your feature: `git checkout -b feature-name`.
+3. Commit your changes: `git commit -m 'Add some feature'`.
+4. Push to the branch: `git push origin feature-name`.
+5. Open a pull request to discuss and merge changes.
+
+
+## License
+
+This project is licensed under the MIT License.
