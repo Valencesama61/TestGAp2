@@ -8,6 +8,7 @@ import {
   Alert,
   ActivityIndicator,
   ScrollView,
+  Platform,
 } from 'react-native';
 import { useAuthStore } from '../../../store/authStore';
 import { TRELLO_AUTH_URL } from '../../../api/trello/constants';
@@ -60,7 +61,11 @@ export default function LoginScreen() {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView contentContainerStyle={[
+      styles.container,
+      Platform.OS === 'web' && styles.webContainer
+    ]}>
+
       <View style={styles.header}>
         <Text style={styles.title}>TrellTech</Text>
         <Text style={styles.subtitle}>Project Management</Text>
@@ -119,6 +124,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#F4F5F7',
     padding: 20,
   },
+
+  // ⭐ Ajout pour web
+  webContainer: {
+    maxWidth: 500,
+    width: '100%',
+    alignSelf: 'center',
+  },
+
   header: {
     alignItems: 'center',
     marginTop: 60,
@@ -195,3 +208,4 @@ const styles = StyleSheet.create({
     color: '#5E6C84',
   },
 });
+

@@ -1,13 +1,17 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, Image, ActivityIndicator, StyleSheet, StatusBar, Animated, Easing } from 'react-native';
+import { View, Text, ActivityIndicator, StyleSheet, StatusBar, Animated, Easing } from 'react-native';
 
 export default function LoadingScreen({ onFinish }) {
   const rotateOuter = useRef(new Animated.Value(0)).current;
   const rotateMiddle = useRef(new Animated.Value(0)).current;
   const rotateInner = useRef(new Animated.Value(0)).current;
 
-  useEffect(() => {
+  const pulseInner = useRef(new Animated.Value(1)).current;
+  const pulseMiddle = useRef(new Animated.Value(1)).current;
+  const pulseOuter = useRef(new Animated.Value(1)).current;
 
+  useEffect(() => {
+    // Rotation animations
     const createAnimation = (animatedValue, duration, clockwise = true) => {
       return Animated.loop(
         Animated.timing(animatedValue, {
@@ -19,34 +23,52 @@ export default function LoadingScreen({ onFinish }) {
       );
     };
 
-    const outerAnim = createAnimation(rotateOuter, 4000);
-    const middleAnim = createAnimation(rotateMiddle, 3000, false);
-    const innerAnim = createAnimation(rotateInner, 2000);
+    createAnimation(rotateOuter, 4000).start();
+    createAnimation(rotateMiddle, 3000, false).start();
+    createAnimation(rotateInner, 2000).start();
 
-    outerAnim.start();
-    middleAnim.start();
-    innerAnim.start();
+    // Vibration / pulse ripple effect
+    const pulse = () => {
+      Animated.sequence([
+        Animated.timing(pulseInner, {
+          toValue: 1.15,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseInner, { toValue: 1, duration: 200, useNativeDriver: true }),
 
+        Animated.timing(pulseMiddle, {
+          toValue: 1.15,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseMiddle, { toValue: 1, duration: 200, useNativeDriver: true }),
+
+        Animated.timing(pulseOuter, {
+          toValue: 1.15,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseOuter, { toValue: 1, duration: 200, useNativeDriver: true }),
+      ]).start(() => pulse());
+    };
+
+    pulse();
 
     const timer = setTimeout(() => onFinish(), 3000);
-
-    return () => {
-      outerAnim.stop();
-      middleAnim.stop();
-      innerAnim.stop();
-      clearTimeout(timer);
-    };
+    return () => clearTimeout(timer);
   }, []);
-
 
   const rotateOuterInterpolate = rotateOuter.interpolate({
     inputRange: [0, 1],
     outputRange: ['0deg', '360deg'],
   });
+
   const rotateMiddleInterpolate = rotateMiddle.interpolate({
     inputRange: [0, 1],
     outputRange: ['0deg', '-360deg'],
   });
+
   const rotateInnerInterpolate = rotateInner.interpolate({
     inputRange: [0, 1],
     outputRange: ['0deg', '360deg'],
@@ -56,18 +78,45 @@ export default function LoadingScreen({ onFinish }) {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#6A0DAD" />
 
-      <Animated.View style={[styles.ringOuter, { transform: [{ rotate: rotateOuterInterpolate }] }]}>
-        <Animated.View style={[styles.ringMiddle, { transform: [{ rotate: rotateMiddleInterpolate }] }]}>
-          <Animated.View style={[styles.ringInner, { transform: [{ rotate: rotateInnerInterpolate }] }]}>
-            {/* Logo */}
-            {/* <Image source={require('../../../assets/icon.png')} style={styles.logo} /> */}
-          </Animated.View>
+      <Animated.View
+        style={[
+          styles.ringOuter,
+          {
+            transform: [
+              { rotate: rotateOuterInterpolate },
+              { scale: pulseOuter },
+            ],
+          },
+        ]}
+      >
+        <Animated.View
+          style={[
+            styles.ringMiddle,
+            {
+              transform: [
+                { rotate: rotateMiddleInterpolate },
+                { scale: pulseMiddle },
+              ],
+            },
+          ]}
+        >
+          <Animated.View
+            style={[
+              styles.ringInner,
+              {
+                transform: [
+                  { rotate: rotateInnerInterpolate },
+                  { scale: pulseInner },
+                ],
+              },
+            ]}
+          />
         </Animated.View>
       </Animated.View>
 
       <View style={styles.textContainer}>
-        <Text style={styles.title}>Foody</Text>
-        <Text style={styles.subtitle}>Foody is always right</Text>
+        <Text style={styles.title}>TrellTech</Text>
+        <Text style={styles.subtitle}>Your planning platform</Text>
       </View>
 
       <ActivityIndicator size="large" color="#FFFFFF" style={styles.spinner} />
@@ -78,7 +127,7 @@ export default function LoadingScreen({ onFinish }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#6A0DAD',
+    backgroundColor: '#0079BF',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -109,10 +158,6 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.5)',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  logo: {
-    width: 60,
-    height: 60,
   },
   textContainer: {
     alignItems: 'center',

@@ -10,6 +10,7 @@ import {
   Modal,
   TextInput,
   Dimensions,
+  Platform,
 } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import trelloClient from '../../../api/trello/client';
@@ -21,7 +22,9 @@ import {
   useUpdateWorkspace,
   useDeleteWorkspace,
 } from '../hooks/useWorkspaceActions';
+
 const screenWidth = Dimensions.get('screen').width;
+
 const WorkspacesListScreen = ({ navigation }) => {
   // === FETCH WORKSPACES ===
   const { data: workspaces, isLoading, error } = useQuery({
@@ -39,11 +42,10 @@ const WorkspacesListScreen = ({ navigation }) => {
 
   // === MODAL STATE ===
   const [modalVisible, setModalVisible] = useState(false);
-  const [modalAction, setModalAction] = useState(null); // create | update
+  const [modalAction, setModalAction] = useState(null);
   const [modalInput, setModalInput] = useState('');
   const [selectedWorkspace, setSelectedWorkspace] = useState(null);
 
-  // OPEN MODAL
   const openModal = (action, workspace = null) => {
     setModalAction(action);
     setSelectedWorkspace(workspace);
@@ -51,7 +53,6 @@ const WorkspacesListScreen = ({ navigation }) => {
     setModalVisible(true);
   };
 
-  // VALIDATE CREATE / UPDATE
   const validateModal = () => {
     const name = modalInput.trim();
     if (!name) return;
@@ -70,7 +71,6 @@ const WorkspacesListScreen = ({ navigation }) => {
     setModalVisible(false);
   };
 
-  // DELETE
   const handleDelete = (workspace) => {
     Alert.alert(
       'Delete',
@@ -104,7 +104,6 @@ const WorkspacesListScreen = ({ navigation }) => {
     );
   }
 
-  // RENDER ITEM
   const renderWorkspaceItem = ({ item }) => (
     <View style={styles.workspaceItem}>
       <TouchableOpacity
@@ -121,25 +120,18 @@ const WorkspacesListScreen = ({ navigation }) => {
             {item.displayName ? item.displayName.charAt(0).toUpperCase() : 'W'}
           </Text>
         </View>
+
         <View style={styles.workspaceInfo}>
           <Text style={styles.workspaceName}>{item.displayName}</Text>
           <Text style={styles.workspaceType}>{item.name || 'Workspace'}</Text>
         </View>
       </TouchableOpacity>
 
-      {/* EDIT BUTTON */}
-      <TouchableOpacity
-        style={styles.actionButton}
-        onPress={() => openModal('update', item)}
-      >
+      <TouchableOpacity style={styles.actionButton} onPress={() => openModal('update', item)}>
         <Text style={styles.actionButtonText}>Edit</Text>
       </TouchableOpacity>
 
-      {/* DELETE BUTTON */}
-      <TouchableOpacity
-        style={styles.actionButton}
-        onPress={() => handleDelete(item)}
-      >
+      <TouchableOpacity style={styles.actionButton} onPress={() => handleDelete(item)}>
         <Text style={[styles.actionButtonText, { color: 'red' }]}>Delete</Text>
       </TouchableOpacity>
     </View>
@@ -147,17 +139,12 @@ const WorkspacesListScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-
       {/* HEADER */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Workspaces</Text>
-        <TouchableOpacity
-          style={styles.addButton}
-          onPress={() => openModal('create')}
-        >
+        <TouchableOpacity style={styles.addButton} onPress={() => openModal('create')}>
           <Text style={styles.addButtonText}>+ Add</Text>
         </TouchableOpacity>
-
         <Text style={styles.headerSubtitle}>
           {workspaces?.length || 0} workspace(s)
         </Text>
@@ -169,16 +156,20 @@ const WorkspacesListScreen = ({ navigation }) => {
         keyExtractor={(item) => item.id}
         renderItem={renderWorkspaceItem}
         contentContainerStyle={styles.listContainer}
+        numColumns={Platform.OS === 'web' ? 3 : 1}
+        columnWrapperStyle={
+          Platform.OS === 'web'
+            ? { justifyContent: 'space-between', gap: 12 }
+            : null
+        }
       />
 
-      {/* Modal input  */}
+      {/* Modal */}
       <Modal visible={modalVisible} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>
-              {modalAction === 'create'
-                ? 'Create a workspace'
-                : 'Update a workspace'}
+              {modalAction === 'create' ? 'Create a workspace' : 'Update a workspace'}
             </Text>
 
             <TextInput
@@ -206,18 +197,13 @@ const WorkspacesListScreen = ({ navigation }) => {
           </View>
         </View>
       </Modal>
-
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F4F5F7' },
-  centerContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+
   header: {
     backgroundColor: '#fff',
     padding: 16,
@@ -237,36 +223,44 @@ const styles = StyleSheet.create({
   },
   addButtonText: { color: 'white', fontWeight: 'bold' },
 
-  listContainer: { padding: 16 },
+  listContainer: {
+    padding: 12,
+  },
 
   workspaceItem: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#fff',
-    padding: 16,
+    padding: 14,
     borderRadius: 8,
     marginBottom: 12,
     elevation: 2,
+
+    // GRID WEB
+    flex: Platform.OS === 'web' ? 1 : 0,
+    minWidth: Platform.OS === 'web' ? '31%' : '100%',
+    maxWidth: Platform.OS === 'web' ? '31%' : '100%',
   },
+
   workspaceIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 45,
+    height: 45,
+    borderRadius: 22,
     backgroundColor: '#0079BF',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: 10,
   },
-  workspaceIconText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
+  workspaceIconText: { color: '#fff', fontSize: 17, fontWeight: 'bold' },
 
   workspaceInfo: { flex: 1 },
-  workspaceName: { fontSize: 16, fontWeight: '600', color: '#172B4D' },
-  workspaceType: { fontSize: 14, color: '#5E6C84' },
+  workspaceName: { fontSize: 15, fontWeight: '600', color: '#172B4D' },
+  workspaceType: { fontSize: 13, color: '#5E6C84' },
 
   actionButton: { marginLeft: 8 },
   actionButtonText: { fontSize: 12 },
 
-  // MODAL STYLES
+  // MODAL
   modalOverlay: {
     flex: 1,
     justifyContent: 'center',
